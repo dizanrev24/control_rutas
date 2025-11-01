@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Usuarios Activos - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-people-fill me-2"></i>Usuarios Activos
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent p-0 mt-2">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Usuarios Activos</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'usuario_crear' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Nuevo Usuario
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-left-success shadow h-100" style="border-left: 4px solid #1cc88a;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Activos
+                            </div>
+                            <div class="h4 mb-0 font-weight-bold text-gray-800">
+                                {{ page_obj.paginator.count }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-person-check-fill" style="font-size: 2rem; color: #1cc88a;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h6 class="m-0 font-weight-bold" style="color: #4e73df;">
+                        <i class="bi bi-table me-2"></i>Listado de Usuarios
+                    </h6>
+                </div>
+                <div class="col-auto">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuario...">
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="usuariosTable">
+                    <thead style="background-color: #f8f9fc;">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th>Email</th>
+                            <th>DPI</th>
+                            <th>Rol</th>
+                            <th>Fecha Registro</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td>{{ usuario.id }}</td>
+                            <td>
+                                <strong>{{ usuario.username }}</strong>
+                            </td>
+                            <td>{{ usuario.get_full_name|default:"-" }}</td>
+                            <td>{{ usuario.email|default:"-" }}</td>
+                            <td>{{ usuario.dpi|default:"-" }}</td>
+                            <td>
+                                {% if usuario.rol == 'admin' %}
+                                    <span class="badge bg-danger">Administrador</span>
+                                {% elif usuario.rol == 'secretaria' %}
+                                    <span class="badge bg-info">Secretaria</span>
+                                {% elif usuario.rol == 'vendedor' %}
+                                    <span class="badge bg-primary">Vendedor</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ usuario.rol }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ usuario.date_joined|date:"d/m/Y" }}</td>
+                            <td>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Activo
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'usuario_editar' usuario.pk %}" 
+                                       class="btn btn-sm btn-warning" 
+                                       title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            onclick="desactivarUsuario({{ usuario.pk }}, '{{ usuario.username }}')"
+                                            title="Desactivar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                <p class="mt-2">No hay usuarios activos registrados</p>
+                                <a href="{% url 'usuario_crear' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>Crear Primer Usuario
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+            <nav aria-label="Paginación" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchValue = this.value.toLowerCase();
+        const table = document.getElementById('usuariosTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            let found = false;
+            const cells = rows[i].getElementsByTagName('td');
+            
+            for (let j = 0; j < cells.length; j++) {
+                const cellValue = cells[j].textContent.toLowerCase();
+                if (cellValue.includes(searchValue)) {
+                    found = true;
+                    break;
+                }
+            }
+            
+            rows[i].style.display = found ? '' : 'none';
+        }
+    });
+
+    function desactivarUsuario(usuarioId, username) {
+        Swal.fire({
+            title: '¿Desactivar Usuario?',
+            html: `¿Está seguro de desactivar al usuario <strong>${username}</strong>?<br>El usuario será movido a la lista de inactivos.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Desactivando usuario',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                window.location.href = `/usuarios/${usuarioId}/toggle/`;
+            }
+        });
+    }
+</script>
+{% endblock %}
