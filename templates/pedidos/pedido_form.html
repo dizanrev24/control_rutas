@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Nuevo Pedido - Sistema de Gestión{% endblock %}
+
+{% block extra_css %}
+<style>
+    .formset-row {
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+    .formset-row:last-child {
+        border-bottom: none;
+    }
+    .subtotal-display {
+        font-weight: bold;
+        color: #17a2b8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-clipboard-check me-2"></i>Nuevo Pedido
+        </h1>
+        <a href="{% url 'dentro_visita' detalle_planificacion.id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver a Visita
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Cliente</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-1"><strong>Nombre:</strong> {{ cliente.nombre }}</p>
+            <p class="mb-1"><strong>NIT:</strong> {{ cliente.nit }}</p>
+            <p class="mb-0"><strong>Dirección:</strong> {{ cliente.direccion }}</p>
+        </div>
+    </div>
+
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Los <strong>pedidos</strong> son para entrega futura y <strong>NO descargan stock del camión</strong>.
+        Puedes seleccionar cualquier producto del catálogo.
+    </div>
+
+    <form method="post" id="pedidoForm">
+        {% csrf_token %}
+        
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Productos</h5>
+            </div>
+            <div class="card-body">
+                {{ formset.management_form }}
+                
+                <div id="formset-container">
+                    {% for form in formset %}
+                        <div class="formset-row" data-form-index="{{ forloop.counter0 }}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {{ form.producto|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ form.cantidad|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ form.precio_unitario|as_crispy_field }}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Subtotal</label>
+                                    <div class="form-control-plaintext subtotal-display" id="subtotal-{{ forloop.counter0 }}">
+                                        $0.00
+                                    </div>
+                                </div>
+                            </div>
+                            {{ form.DELETE }}
+                            {% if form.DELETE %}
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="id_{{ formset.prefix }}-{{ forloop.counter0 }}-DELETE" name="{{ formset.prefix }}-{{ forloop.counter0 }}-DELETE">
+                                    <label class="form-check-label text-danger" for="id_{{ formset.prefix }}-{{ forloop.counter0 }}-DELETE">
+                                        Eliminar este producto
+                                    </label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Información Adicional</h5>
+            </div>
+            <div class="card-body">
+                {% crispy pedido_form %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body bg-light">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p class="mb-0 text-muted">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Este pedido quedará en estado <strong>Pendiente</strong> hasta que la secretaría lo procese.
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <h4 class="mb-0">
+                            Total: <span id="total-pedido" class="text-info">$0.00</span>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'dentro_visita' detalle_planificacion.id %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle me-1"></i>Cancelar
+            </a>
+            <button type="submit" class="btn btn-info btn-lg">
+                <i class="bi bi-check-circle me-1"></i>Confirmar Pedido
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Función para calcular subtotal de una línea
+        function calcularSubtotal(index) {
+            const cantidadInput = document.querySelector(`[name="detalles-${index}-cantidad"]`);
+            const precioInput = document.querySelector(`[name="detalles-${index}-precio_unitario"]`);
+            const subtotalDisplay = document.getElementById(`subtotal-${index}`);
+            
+            if (cantidadInput && precioInput && subtotalDisplay) {
+                const cantidad = parseFloat(cantidadInput.value) || 0;
+                const precio = parseFloat(precioInput.value) || 0;
+                const subtotal = cantidad * precio;
+                
+                subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+            }
+        }
+        
+        // Función para calcular total del pedido
+        function calcularTotal() {
+            let total = 0;
+            
+            document.querySelectorAll('.subtotal-display').forEach(function(element) {
+                const valor = parseFloat(element.textContent.replace('$', '')) || 0;
+                total += valor;
+            });
+            
+            document.getElementById('total-pedido').textContent = `$${total.toFixed(2)}`;
+        }
+        
+        // Adjuntar eventos a todos los inputs
+        document.querySelectorAll('[name^="detalles-"][name$="-cantidad"], [name^="detalles-"][name$="-precio_unitario"]').forEach(function(input) {
+            const match = input.name.match(/detalles-(\d+)-(cantidad|precio_unitario)/);
+            if (match) {
+                const index = match[1];
+                
+                input.addEventListener('input', function() {
+                    calcularSubtotal(index);
+                    calcularTotal();
+                });
+            }
+        });
+        
+        // Calcular totales iniciales
+        const totalFormsets = parseInt(document.querySelector('[name="detalles-TOTAL_FORMS"]').value);
+        for (let i = 0; i < totalFormsets; i++) {
+            calcularSubtotal(i);
+        }
+        calcularTotal();
+        
+        // Validar antes de enviar
+        document.getElementById('pedidoForm').addEventListener('submit', function(e) {
+            const total = parseFloat(document.getElementById('total-pedido').textContent.replace('$', '')) || 0;
+            
+            if (total <= 0) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debes agregar al menos un producto con cantidad y precio válidos.',
+                    confirmButtonColor: '#d33'
+                });
+                return false;
+            }
+            
+            // Confirmación final
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Confirmar Pedido?',
+                html: `<p>Total: <strong>$${total.toFixed(2)}</strong></p><p>El pedido quedará pendiente de entrega.</p>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#17a2b8',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, confirmar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    e.target.submit();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

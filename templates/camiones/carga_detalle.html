@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Carga{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-box-arrow-in-down"></i>
+            Detalle de Carga
+        </h2>
+        <div>
+            {% if not carga.cerrado %}
+                <a href="{% url 'carga_diaria_agregar_producto' carga.pk %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i>
+                    Agregar Productos
+                </a>
+            {% else %}
+                {% if not carga.cuadre %}
+                    <a href="{% url 'cuadre_diario_crear' carga.pk %}" class="btn btn-warning">
+                        <i class="bi bi-calculator"></i>
+                        Crear Cuadre
+                    </a>
+                {% endif %}
+            {% endif %}
+            <a href="{% url 'carga_diaria_listar' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información de la carga -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Información de la Carga
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-5">Camión:</dt>
+                        <dd class="col-7">
+                            <strong>{{ carga.camion.placa }}</strong>
+                            <br>
+                            <small class="text-muted">{{ carga.camion.marca }}</small>
+                        </dd>
+
+                        <dt class="col-5">Ruta:</dt>
+                        <dd class="col-7">
+                            {% if carga.asignacion_camion_ruta %}
+                                {{ carga.asignacion_camion_ruta.ruta.nombre }}
+                            {% else %}
+                                <span class="text-muted">Sin ruta</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-5">Fecha:</dt>
+                        <dd class="col-7">{{ carga.fecha|date:"d/m/Y" }}</dd>
+
+                        <dt class="col-5">Hora Carga:</dt>
+                        <dd class="col-7">{{ carga.hora_carga|time:"H:i" }}</dd>
+
+                        <dt class="col-5">Estado:</dt>
+                        <dd class="col-7">
+                            {% if carga.cerrado %}
+                                <span class="badge bg-secondary">Cerrada</span>
+                            {% else %}
+                                <span class="badge bg-warning">Abierta</span>
+                            {% endif %}
+                        </dd>
+
+                        {% if carga.observaciones %}
+                            <dt class="col-12 mt-2">Observaciones:</dt>
+                            <dd class="col-12">
+                                <small class="text-muted">{{ carga.observaciones }}</small>
+                            </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos cargados -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i>
+                        Productos Cargados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if detalles %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th class="text-end">Cargado</th>
+                                        <th class="text-end">Actual</th>
+                                        <th class="text-end">Vendido</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for detalle in detalles %}
+                                        <tr>
+                                            <td><strong>{{ detalle.producto.nombre }}</strong></td>
+                                            <td>
+                                                <small class="text-muted">{{ detalle.producto.categoria.nombre }}</small>
+                                            </td>
+                                            <td class="text-end">{{ detalle.cantidad_cargada|floatformat:2 }}</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-info">
+                                                    {{ detalle.cantidad_actual|floatformat:2 }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="badge bg-success">
+                                                    {{ detalle.cantidad_vendida|floatformat:2 }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-active">
+                                        <td colspan="2"><strong>TOTAL</strong></td>
+                                        <td class="text-end"><strong>{{ detalles|length }} productos</strong></td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center mb-0">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No hay productos cargados.
+                            {% if not carga.cerrado %}
+                                <a href="{% url 'carga_diaria_agregar_producto' carga.pk %}" class="alert-link">Agregar productos ahora</a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

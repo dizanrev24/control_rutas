@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Crear Nuevo Cliente - Control de Rutas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-person-plus"></i> Crear Nuevo Cliente</h2>
+        <a href="{% url 'planificacion_vendedor_dia' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Mi Día
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información del Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Importante:</strong> El cliente será agregado automáticamente a tu ruta: 
+                        <strong>{{ asignacion.ruta.nombre }}</strong> y aparecerá en tu planificación del día de hoy.
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'planificacion_vendedor_dia' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Crear Cliente y Agregar a Mi Ruta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información adicional -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="bi bi-question-circle"></i> ¿Por qué crear un cliente?</h6>
+                    <ul class="mb-0">
+                        <li>Registra clientes nuevos que encuentres durante tu ruta</li>
+                        <li>El cliente se agrega automáticamente a tu ruta asignada</li>
+                        <li>Aparecerá inmediatamente en tu planificación del día</li>
+                        <li>Podrás visitarlo, crear ventas y pedidos en el mismo día</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

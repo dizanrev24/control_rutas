@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Marcar como No Visitado - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-x-circle me-2"></i>Marcar Cliente
+        </h1>
+        <a href="{% url 'planificacion_vendedor_dia' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Cancelar
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">{{ cliente.nombre }}</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-1"><strong>NIT:</strong> {{ cliente.nit }}</p>
+            <p class="mb-1"><strong>Dirección:</strong> {{ cliente.direccion }}</p>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Selecciona el motivo por el cual no visitaste a este cliente.
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% crispy form %}
+        </div>
+    </div>
+</div>
+{% endblock %}

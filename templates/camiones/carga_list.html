@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cargas Diarias{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-box-arrow-in-down"></i>
+            Cargas Diarias
+        </h2>
+        <a href="{% url 'carga_diaria_crear' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            Nueva Carga
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Camión</th>
+                                <th>Ruta</th>
+                                <th>Hora Carga</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for carga in page_obj %}
+                                <tr>
+                                    <td>{{ carga.fecha|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <i class="bi bi-truck"></i>
+                                        <strong>{{ carga.camion.placa }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ carga.camion.marca }}</small>
+                                    </td>
+                                    <td>
+                                        {% if carga.asignacion_camion_ruta %}
+                                            {{ carga.asignacion_camion_ruta.ruta.nombre }}
+                                        {% else %}
+                                            <span class="text-muted">Sin ruta</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ carga.hora_carga|time:"H:i" }}</td>
+                                    <td>
+                                        {% if carga.cerrado %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-lock"></i>
+                                                Cerrada
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-unlock"></i>
+                                                Abierta
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group">
+                                            <a href="{% url 'carga_diaria_detalle' carga.pk %}" 
+                                               class="btn btn-sm btn-info" 
+                                               title="Ver detalle">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if not carga.cerrado %}
+                                                <a href="{% url 'carga_diaria_agregar_producto' carga.pk %}" 
+                                                   class="btn btn-sm btn-success" 
+                                                   title="Agregar productos">
+                                                    <i class="bi bi-plus-circle"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Navegación de páginas">
+                        <ul class="pagination justify-content-center mb-0 mt-3">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Total de cargas: {{ total_cargas }}
+                    </small>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i>
+                    No hay cargas registradas.
+                    <a href="{% url 'carga_diaria_crear' %}" class="alert-link">Crear la primera carga</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

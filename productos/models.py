@@ -52,3 +52,4 @@ class Producto(models.Model):
         if self.precio_compra > 0:
             return ((self.precio_venta - self.precio_compra) / self.precio_compra) * 100
         return 0
+    

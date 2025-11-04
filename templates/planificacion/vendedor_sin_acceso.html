@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sin Acceso - Control de Rutas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% if error_tipo == 'sin_perfil' %}
+                        Perfil Incompleto
+                        {% elif error_tipo == 'sin_asignacion' %}
+                        Sin Ruta Asignada
+                        {% else %}
+                        Acceso Restringido
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        {% if error_tipo == 'sin_perfil' %}
+                        <i class="bi bi-person-x" style="font-size: 5rem; color: #f6c23e;"></i>
+                        {% elif error_tipo == 'sin_asignacion' %}
+                        <i class="bi bi-map-fill" style="font-size: 5rem; color: #f6c23e;"></i>
+                        {% else %}
+                        <i class="bi bi-exclamation-triangle" style="font-size: 5rem; color: #f6c23e;"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <h5 class="mb-3">{{ mensaje }}</h5>
+                    
+                    {% if error_tipo == 'sin_perfil' %}
+                    <p class="text-muted mb-4">
+                        Tu cuenta de usuario no tiene un perfil de vendedor asociado. 
+                        Este perfil es necesario para acceder a las funcionalidades de planificación y ventas.
+                    </p>
+                    <div class="alert alert-info">
+                        <strong><i class="bi bi-info-circle me-2"></i>¿Qué hacer?</strong>
+                        <ul class="text-start mt-2 mb-0">
+                            <li>Contacta con el administrador del sistema</li>
+                            <li>Solicita que te asignen un perfil de vendedor</li>
+                            <li>Proporciona tu código de empleado y datos personales</li>
+                        </ul>
+                    </div>
+                    
+                    {% elif error_tipo == 'sin_asignacion' %}
+                    <p class="text-muted mb-4">
+                        Actualmente no tienes una ruta asignada. Necesitas tener una ruta activa 
+                        para poder realizar visitas, crear ventas y pedidos.
+                    </p>
+                    
+                    {% if vendedor %}
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">Tu Información:</h6>
+                            <p class="mb-1"><strong>Código:</strong> {{ vendedor.codigo_empleado }}</p>
+                            <p class="mb-1"><strong>Nombre:</strong> {{ vendedor.nombre_completo }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-info">
+                        <strong><i class="bi bi-info-circle me-2"></i>¿Qué hacer?</strong>
+                        <ul class="text-start mt-2 mb-0">
+                            <li>Contacta con el administrador o secretaría</li>
+                            <li>Solicita que te asignen una ruta de ventas</li>
+                            <li>Espera a que se active tu asignación de ruta</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información de contacto -->
+            <div class="card shadow mt-3">
+                <div class="card-body text-center">
+                    <h6><i class="bi bi-telephone-fill me-2"></i>Contacto de Soporte</h6>
+                    <p class="mb-0 text-muted">
+                        Si tienes dudas o necesitas ayuda, contacta con el departamento de sistemas.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-box-arrow-in-down"></i>
+            {{ titulo }}
+        </h2>
+        <div>
+            {% if not carga.cerrado %}
+                <button type="button" class="btn btn-success" onclick="cerrarCarga()">
+                    <i class="bi bi-lock"></i>
+                    Cerrar Carga
+                </button>
+            {% endif %}
+            <a href="{% url 'carga_diaria_detalle' carga.pk %}" class="btn btn-info">
+                <i class="bi bi-eye"></i>
+                Ver Detalle
+            </a>
+            <a href="{% url 'carga_diaria_listar' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario para agregar producto -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Agregar Producto</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <button type="submit" class="btn btn-success w-100 mt-3">
+                            <i class="bi bi-plus-circle"></i>
+                            Agregar
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">Información de la Carga</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-6">Camión:</dt>
+                        <dd class="col-6"><strong>{{ carga.camion.placa }}</strong></dd>
+
+                        <dt class="col-6">Fecha:</dt>
+                        <dd class="col-6">{{ carga.fecha|date:"d/m/Y" }}</dd>
+
+                        <dt class="col-6">Ruta:</dt>
+                        <dd class="col-6">{{ carga.asignacion_camion_ruta.ruta.nombre }}</dd>
+
+                        <dt class="col-6">Estado:</dt>
+                        <dd class="col-6">
+                            {% if carga.cerrado %}
+                                <span class="badge bg-secondary">Cerrada</span>
+                            {% else %}
+                                <span class="badge bg-warning">Abierta</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de productos cargados -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i>
+                        Productos Cargados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if detalles %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-end">Cantidad Cargada</th>
+                                        <th class="text-end">Cantidad Actual</th>
+                                        <th class="text-end">Vendido</th>
+                                        {% if not carga.cerrado %}
+                                            <th class="text-end">Acciones</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for detalle in detalles %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ detalle.producto.nombre }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ detalle.producto.categoria.nombre }}</small>
+                                            </td>
+                                            <td class="text-end">{{ detalle.cantidad_cargada|floatformat:2 }}</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-info">
+                                                    {{ detalle.cantidad_actual|floatformat:2 }}
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="badge bg-success">
+                                                    {{ detalle.cantidad_vendida|floatformat:2 }}
+                                                </span>
+                                            </td>
+                                            {% if not carga.cerrado %}
+                                                <td class="text-end">
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-danger" 
+                                                            onclick="eliminarProducto({{ detalle.pk }}, '{{ detalle.producto.nombre }}')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-active">
+                                        <td><strong>TOTAL</strong></td>
+                                        <td class="text-end">
+                                            <strong>{{ detalles|length }} productos</strong>
+                                        </td>
+                                        <td colspan="{% if not carga.cerrado %}3{% else %}2{% endif %}"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center mb-0">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No hay productos agregados a esta carga.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function eliminarProducto(detalleId, productoNombre) {
+    Swal.fire({
+        title: '¿Eliminar producto?',
+        html: `<p>Producto: <strong>${productoNombre}</strong></p>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/camiones/cargas/{{ carga.pk }}/eliminar-producto/${detalleId}/`;
+        }
+    });
+}
+
+function cerrarCarga() {
+    {% if not detalles %}
+        Swal.fire({
+            icon: 'error',
+            title: 'No se puede cerrar',
+            text: 'Debes agregar al menos un producto antes de cerrar la carga.'
+        });
+        return;
+    {% endif %}
+
+    Swal.fire({
+        title: '¿Cerrar carga?',
+        html: `
+            <p>Una vez cerrada, no podrás agregar más productos.</p>
+            <p>Total productos: <strong>{{ detalles|length }}</strong></p>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, cerrar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '/camiones/cargas/{{ carga.pk }}/cerrar/';
+        }
+    });
+}
+</script>
+{% endblock %}

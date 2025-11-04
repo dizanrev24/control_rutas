@@ -2,10 +2,12 @@ from django.db import models
 from clientes.models import Cliente
 from productos.models import Producto
 from planificacion.models import DetallePlanificacion
+from camiones.models import CargaCamion
 
 class Venta(models.Model):
     """
     Registro de ventas realizadas durante las visitas (RF-03)
+    Las ventas descuentan del inventario del camión (stock móvil)
     """
     ESTADO_CHOICES = [
         ('completada', 'Completada'),
@@ -18,6 +20,13 @@ class Venta(models.Model):
         on_delete=models.PROTECT,
         related_name='ventas',
         verbose_name="Detalle de Planificación"
+    )
+    carga_camion = models.ForeignKey(
+        CargaCamion,
+        on_delete=models.PROTECT,
+        related_name='ventas',
+        verbose_name="Carga de Camión",
+        help_text="Inventario móvil del cual se descuentan los productos"
     )
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT,
                                related_name='ventas', verbose_name="Cliente")
@@ -34,6 +43,10 @@ class Venta(models.Model):
 
     def __str__(self):
         return f"Venta #{self.id} - {self.cliente.nombre} - Q{self.total}"
+
+    def calcular_total(self):
+        """Calcula el total de la venta sumando los detalles"""
+        return sum(detalle.subtotal for detalle in self.detalles.all())
 
 
 class DetalleVenta(models.Model):

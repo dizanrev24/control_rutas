@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Categorías</h2>
+        <a href="{% url 'categoria_crear' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nueva Categoría
+        </a>
+    </div>
+
+    <!-- Búsqueda -->
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" 
+                   placeholder="Buscar categorías..." value="{{ query }}">
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+            {% if query %}
+            <a href="{% url 'categoria_lista' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-times"></i> Limpiar
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Tabla de categorías -->
+    <div class="card">
+        <div class="card-body">
+            <p class="text-muted">Total: {{ total }} categoría(s)</p>
+            
+            {% if categorias %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Productos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categoria in categorias %}
+                        <tr>
+                            <td><strong>{{ categoria.nombre }}</strong></td>
+                            <td>{{ categoria.descripcion|default:"Sin descripción" }}</td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {{ categoria.total_productos }} producto(s)
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'categoria_editar' categoria.pk %}" 
+                                   class="btn btn-sm btn-warning" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#eliminarModal{{ categoria.pk }}"
+                                        title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                
+                                <!-- Modal de confirmación -->
+                                <div class="modal fade" id="eliminarModal{{ categoria.pk }}" 
+                                     tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirmar Eliminación</h5>
+                                                <button type="button" class="btn-close" 
+                                                        data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                ¿Está seguro de eliminar la categoría 
+                                                "<strong>{{ categoria.nombre }}</strong>"?
+                                                {% if categoria.total_productos > 0 %}
+                                                <div class="alert alert-warning mt-3">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                    Esta categoría tiene {{ categoria.total_productos }} 
+                                                    producto(s) asociado(s) y no podrá ser eliminada.
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" 
+                                                        data-bs-dismiss="modal">Cancelar</button>
+                                                <form method="post" 
+                                                      action="{% url 'categoria_eliminar' categoria.pk %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                <p class="text-muted">
+                    {% if query %}
+                        No se encontraron categorías con "{{ query }}"
+                    {% else %}
+                        No hay categorías registradas
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Clientes - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-shop me-2"></i>Gestión de Clientes
+        </h1>
+        <a href="{% url 'cliente_crear' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Cliente
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h6 class="m-0"><i class="bi bi-filter me-2"></i>Filtros</h6>
+        </div>
+        <div class="card-body">
+            {% crispy form_filtro %}
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h6 class="m-0"><i class="bi bi-list me-2"></i>Listado de Clientes</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>NIT</th>
+                            <th>Nombre</th>
+                            <th>Contacto</th>
+                            <th>Teléfono</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in page_obj %}
+                        <tr>
+                            <td>{{ cliente.nit }}</td>
+                            <td>{{ cliente.nombre }}</td>
+                            <td>{{ cliente.nombre_contacto|default:"-" }}</td>
+                            <td>{{ cliente.telefono }}</td>
+                            <td>
+                                {% if cliente.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'cliente_editar' cliente.pk %}" class="btn btn-sm btn-info" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if cliente.activo %}
+                                    <button onclick="desactivarCliente({{ cliente.pk }})" class="btn btn-sm btn-warning" title="Desactivar">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                {% else %}
+                                    <button onclick="activarCliente({{ cliente.pk }})" class="btn btn-sm btn-success" title="Activar">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No se encontraron clientes</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function desactivarCliente(id) {
+    Swal.fire({
+        title: '¿Desactivar Cliente?',
+        text: 'El cliente quedará inactivo',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, desactivar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/clientes/${id}/eliminar/`;
+        }
+    });
+}
+
+function activarCliente(id) {
+    Swal.fire({
+        title: '¿Activar Cliente?',
+        text: 'El cliente quedará activo nuevamente',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, activar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/clientes/${id}/activar/`;
+        }
+    });
+}
+</script>
+{% endblock %}

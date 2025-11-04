@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ventas por Vendedor{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-file-earmark-bar-graph text-success"></i>
+                Reporte de Ventas por Vendedor
+            </h2>
+            <p class="text-muted">Totales de ventas agrupados por vendedor</p>
+        </div>
+        <a href="{% url 'reporte_dashboard' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Volver
+        </a>
+    </div>
+
+    <!-- Filtros de fecha -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" 
+                           name="fecha_inicio" 
+                           class="form-control" 
+                           value="{{ fecha_inicio|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" 
+                           name="fecha_fin" 
+                           class="form-control" 
+                           value="{{ fecha_fin|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i>
+                        Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumen general -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Ventas</h6>
+                    <h2 class="text-success mb-0">{{ total_ventas }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Monto Total</h6>
+                    <h2 class="text-primary mb-0">Q{{ total_general|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de vendedores -->
+    {% if vendedores_stats %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-people"></i>
+                    Detalle por Vendedor
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Vendedor</th>
+                                <th class="text-end">Cantidad Ventas</th>
+                                <th class="text-end">Monto Bruto</th>
+                                <th class="text-end">Descuentos</th>
+                                <th class="text-end">Monto Neto</th>
+                                <th class="text-end">Promedio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vendedor_nombre, stats in vendedores_stats %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <i class="bi bi-person-badge"></i>
+                                        <strong>{{ vendedor_nombre }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-info">{{ stats.total_ventas }}</span>
+                                    </td>
+                                    <td class="text-end">Q{{ stats.total_monto|floatformat:2 }}</td>
+                                    <td class="text-end text-danger">
+                                        {% if stats.total_descuento > 0 %}
+                                            -Q{{ stats.total_descuento|floatformat:2 }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-success">Q{{ stats.total_neto|floatformat:2 }}</strong>
+                                    </td>
+                                    <td class="text-end text-muted">
+                                        {% if stats.total_ventas > 0 %}
+                                            Q{% widthratio stats.total_neto stats.total_ventas 1 %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-active">
+                            <tr>
+                                <td colspan="2"><strong>TOTALES</strong></td>
+                                <td class="text-end"><strong>{{ total_ventas }}</strong></td>
+                                <td colspan="2"></td>
+                                <td class="text-end"><strong class="text-success">Q{{ total_general|floatformat:2 }}</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i>
+            No hay ventas registradas en el período seleccionado.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

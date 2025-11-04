@@ -302,7 +302,40 @@
                 </a>
             </li>
 
-            <!-- Menú de Usuarios -->
+            {% if user.es_vendedor %}
+            <!-- Menú para Vendedores -->
+            <li class="menu-item">
+                <a href="{% url 'planificacion_vendedor_dia' %}" class="menu-link">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Mi Planificación</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{% url 'vendedor_crear_cliente' %}" class="menu-link">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Crear Cliente</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% if user.puede_gestionar_rutas %}
+            <!-- Menús para Admin y Secretaría -->
+            
+            <!-- Clientes -->
+            <li class="menu-item">
+                <a class="menu-link" data-submenu="clientes">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <span>Clientes</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <ul class="submenu" id="submenu-clientes">
+                    <li><a href="{% url 'cliente_crear' %}" class="menu-link"><i class="bi bi-plus-circle"></i><span>Crear Cliente</span></a></li>
+                    <li><a href="{% url 'cliente_listar' %}" class="menu-link"><i class="bi bi-list-ul"></i><span>Listar Clientes</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Usuarios (Solo Admin) -->
+            {% if user.es_admin %}
             <li class="menu-item">
                 <a class="menu-link" data-submenu="usuarios">
                     <i class="bi bi-people"></i>
@@ -315,8 +348,79 @@
                     <li><a href="{% url 'usuario_inactivos' %}" class="menu-link"><i class="bi bi-archive"></i><span>Usuarios Inactivos</span></a></li>
                 </ul>
             </li>
+            {% endif %}
 
-            <!-- Menú de Reportes (Ejemplo) -->
+            <!-- Productos (placeholder - pending implementation) -->
+            <li class="menu-item">
+                <a class="menu-link" data-submenu="productos">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Productos</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <ul class="submenu" id="submenu-productos">
+                    <li><a href="{% url 'producto_crear' %}" class="menu-link"><i class="bi bi-plus-circle"></i><span>Crear Producto</span></a></li>
+                    <li><a href="{% url 'producto_listar' %}" class="menu-link"><i class="bi bi-list-ul"></i><span>Listar Productos</span></a></li>
+                    <li><a href="{% url 'categoria_lista' %}" class="menu-link"><i class="bi bi-list-ul"></i><span>Listar Categoria</span></a></li>
+                    <li><a href="{% url 'categoria_crear' %}" class="menu-link"><i class="bi bi-plus-circle"></i><span>Crear Categoria</span></a></li>
+                </ul>
+                </ul>
+            </li>
+
+            <!-- Rutas -->
+            <li class="menu-item">
+                <a class="menu-link" data-submenu="rutas">
+                    <i class="bi bi-map"></i>
+                    <span>Rutas</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <ul class="submenu" id="submenu-rutas">
+                    <li><a href="{% url 'ruta_crear' %}" class="menu-link"><i class="bi bi-plus-circle"></i><span>Crear Ruta</span></a></li>
+                    <li><a href="{% url 'ruta_listar' %}" class="menu-link"><i class="bi bi-list-ul"></i><span>Listar Rutas</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Asignaciones -->
+            <li class="menu-item">
+                <a class="menu-link" data-submenu="asignaciones">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Asignaciones</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <ul class="submenu" id="submenu-asignaciones">
+                    <li><a href="{% url 'asignacion_crear' %}" class="menu-link"><i class="bi bi-plus-circle"></i><span>Crear Asignación</span></a></li>
+                    <li><a href="{% url 'asignacion_listar' %}" class="menu-link"><i class="bi bi-list-ul"></i><span>Listar Asignaciones</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Camiones -->
+            <li class="menu-item">
+                <a class="menu-link" data-submenu="camiones">
+                    <i class="bi bi-truck"></i>
+                    <span>Camiones</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <ul class="submenu" id="submenu-camiones">
+                    <li><a href="{% url 'camion_crear' %}" class="menu-link"><i class="bi bi-plus-circle"></i><span>Registrar Camión</span></a></li>
+                    <li><a href="{% url 'camion_listar' %}" class="menu-link"><i class="bi bi-list-ul"></i><span>Listar Camiones</span></a></li>
+                    <li><a href="{% url 'carga_diaria_listar' %}" class="menu-link"><i class="bi bi-box-arrow-in-down"></i><span>Cargas Diarias</span></a></li>
+                    <li><a href="{% url 'cuadre_diario_listar' %}" class="menu-link"><i class="bi bi-calculator"></i><span>Cuadres Diarios</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Ventas y Pedidos -->
+            <li class="menu-item">
+                <a class="menu-link" data-submenu="ventas">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Ventas y Pedidos</span>
+                    <i class="bi bi-chevron-right arrow"></i>
+                </a>
+                <ul class="submenu" id="submenu-ventas">
+                    <li><a href="{% url 'venta_listar' %}" class="menu-link"><i class="bi bi-receipt"></i><span>Listar Ventas</span></a></li>
+                    <li><a href="{% url 'pedido_listar' %}" class="menu-link"><i class="bi bi-clipboard-check"></i><span>Listar Pedidos</span></a></li>
+                </ul>
+            </li>
+
+            <!-- Reportes -->
             <li class="menu-item">
                 <a class="menu-link" data-submenu="reportes">
                     <i class="bi bi-bar-chart"></i>
@@ -324,10 +428,13 @@
                     <i class="bi bi-chevron-right arrow"></i>
                 </a>
                 <ul class="submenu" id="submenu-reportes">
-                    <li><a href="#" class="menu-link"><i class="bi bi-file-earmark-text"></i><span>Reporte 1</span></a></li>
-                    <li><a href="#" class="menu-link"><i class="bi bi-file-earmark-bar-graph"></i><span>Reporte 2</span></a></li>
+                    <li><a href="{% url 'reporte_dashboard' %}" class="menu-link"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+                    <li><a href="{% url 'reporte_fotos_duplicadas' %}" class="menu-link"><i class="bi bi-camera"></i><span>Fotos Duplicadas</span></a></li>
+                    <li><a href="{% url 'reporte_ubicaciones_invalidas' %}" class="menu-link"><i class="bi bi-geo-alt"></i><span>Ubicaciones Inválidas</span></a></li>
+                    <li><a href="{% url 'reporte_ventas_por_vendedor' %}" class="menu-link"><i class="bi bi-file-earmark-bar-graph"></i><span>Ventas por Vendedor</span></a></li>
                 </ul>
             </li>
+            {% endif %}
 
             <!-- Configuración -->
             <li class="menu-item">
@@ -348,9 +455,9 @@
                 </form>
 
                 <a href="#" class="menu-link" id="logout-link">
-                    <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Cerrar Sesión</span>
                 </a>
-
             </li>
         </ul>
     </aside>

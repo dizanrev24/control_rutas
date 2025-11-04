@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fotos Duplicadas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-camera text-warning"></i>
+                Reporte de Fotos Duplicadas
+            </h2>
+            <p class="text-muted">Visitas donde se usó la misma foto (detectado por hash MD5)</p>
+        </div>
+        <a href="{% url 'reporte_dashboard' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Volver
+        </a>
+    </div>
+
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Resumen</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-7">Hashes duplicados:</dt>
+                        <dd class="col-5"><strong>{{ total_hashes_duplicados }}</strong></dd>
+
+                        <dt class="col-7">Registros afectados:</dt>
+                        <dd class="col-5"><strong>{{ total_registros_afectados }}</strong></dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    {% if resultados %}
+        {% for resultado in resultados %}
+            <div class="card mb-3">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">
+                        <i class="bi bi-camera"></i>
+                        Hash: <code>{{ resultado.hash|truncatechars:20 }}</code>
+                        <span class="badge bg-dark float-end">{{ resultado.total }} usos</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Vendedor</th>
+                                    <th>Cliente</th>
+                                    <th>Hora Llegada</th>
+                                    <th>Ubicación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in resultado.detalles %}
+                                    <tr>
+                                        <td>{{ detalle.planificacion.fecha|date:"d/m/Y" }}</td>
+                                        <td>{{ detalle.planificacion.asignacion.vendedor.usuario.get_full_name }}</td>
+                                        <td>{{ detalle.planificacion.ruta_detalle.cliente.nombre }}</td>
+                                        <td>
+                                            {% if detalle.hora_llegada %}
+                                                {{ detalle.hora_llegada|time:"H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if detalle.ubicacion_valida %}
+                                                <span class="badge bg-success">Válida</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inválida</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-success text-center">
+            <i class="bi bi-check-circle"></i>
+            <strong>¡Excelente!</strong> No se detectaron fotos duplicadas.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

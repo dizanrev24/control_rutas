@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Venta #{{ venta.id }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        .company-name {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .document-title {
+            font-size: 16pt;
+            color: #666;
+        }
+        .info-section {
+            margin-bottom: 20px;
+        }
+        .info-row {
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+        .total-row {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 10pt;
+            color: #666;
+        }
+        .observations {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">Sistema de Gestión - Control de Rutas</div>
+        <div class="document-title">Comprobante de Venta</div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-row">
+            <span class="info-label">No. Venta:</span>
+            <span>#{{ venta.id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Fecha:</span>
+            <span>{{ venta.fecha_venta|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Vendedor:</span>
+            <span>{{ venta.detalle_planificacion.planificacion.asignacion.vendedor.usuario.get_full_name }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Camión:</span>
+            <span>{{ venta.carga_camion.camion.placa }} - {{ venta.carga_camion.camion.marca }} {{ venta.carga_camion.camion.modelo }}</span>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h3 style="margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">Cliente</h3>
+        <div class="info-row">
+            <span class="info-label">Nombre:</span>
+            <span>{{ venta.cliente.nombre }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">NIT:</span>
+            <span>{{ venta.cliente.nit }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Dirección:</span>
+            <span>{{ venta.cliente.direccion }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Teléfono:</span>
+            <span>{{ venta.cliente.telefono|default:"N/A" }}</span>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 30px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">Detalle de Productos</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 10%;" class="text-center">Cant.</th>
+                <th style="width: 45%;">Producto</th>
+                <th style="width: 15%;" class="text-right">Precio Unit.</th>
+                <th style="width: 15%;" class="text-right">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in venta.detalles.all %}
+            <tr>
+                <td class="text-center">{{ detalle.cantidad }}</td>
+                <td>{{ detalle.producto.nombre }}</td>
+                <td class="text-right">${{ detalle.precio_unitario|floatformat:2 }}</td>
+                <td class="text-right">${{ detalle.subtotal|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-section">
+        <div class="total-row">
+            Total: ${{ venta.calcular_total|floatformat:2 }}
+        </div>
+    </div>
+
+    {% if venta.observaciones %}
+    <div class="observations">
+        <strong>Observaciones:</strong><br>
+        {{ venta.observaciones }}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Este documento es un comprobante de venta generado automáticamente.</p>
+        <p>Generado el {{ now|date:"d/m/Y H:i" }}</p>
+    </div>
+</body>
+</html>

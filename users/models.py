@@ -105,6 +105,8 @@ class Usuario(AbstractUser):
                 raise ValidationError({
                     'telefono': 'El teléfono solo debe contener números, espacios, guiones o el símbolo +.'
                 })
+    
+    REQUIRED_FIELDS = ['rol', 'email']
 
     def save(self, *args, **kwargs):
         """

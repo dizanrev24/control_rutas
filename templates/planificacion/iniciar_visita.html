@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Iniciar Visita - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-play-circle me-2"></i>Iniciar Visita
+        </h1>
+        <a href="{% url 'planificacion_vendedor_dia' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Cancelar
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ cliente.nombre }}</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-1"><strong>NIT:</strong> {{ cliente.nit }}</p>
+            <p class="mb-1"><strong>Teléfono:</strong> {{ cliente.telefono }}</p>
+            <p class="mb-1"><strong>Dirección:</strong> {{ cliente.direccion }}</p>
+            {% if cliente.referencia_ubicacion %}
+                <p class="mb-0"><strong>Referencia:</strong> {{ cliente.referencia_ubicacion }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Instrucciones:</strong>
+        <ol class="mb-0 mt-2">
+            <li>Se capturará tu ubicación automáticamente</li>
+            <li>Toma una foto del negocio o fachada</li>
+            <li>Agrega observaciones si es necesario</li>
+            <li>Presiona "Iniciar Visita"</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="formIniciarVisita">
+                {% csrf_token %}
+                
+                <!-- Campos de ubicación ocultos -->
+                <input type="hidden" name="latitud" id="id_latitud" required>
+                <input type="hidden" name="longitud" id="id_longitud" required>
+                
+                <!-- Campo de foto -->
+                <div class="mb-3">
+                    <label for="id_fotografia_referencia" class="form-label">
+                        <i class="bi bi-camera me-1"></i>Foto de Referencia *
+                    </label>
+                    <input type="file" 
+                           class="form-control" 
+                           name="fotografia_referencia" 
+                           id="id_fotografia_referencia" 
+                           accept="image/*" 
+                           capture="environment"
+                           required>
+                    <div class="form-text">Toma una foto del negocio o fachada</div>
+                    
+                    <!-- Preview de la foto -->
+                    <div id="preview-container" class="mt-2" style="display: none;">
+                        <img id="preview-image" src="" alt="Preview" class="img-thumbnail" style="max-width: 300px;">
+                    </div>
+                </div>
+
+                <!-- Campo de observaciones -->
+                <div class="mb-3">
+                    <label for="id_observaciones" class="form-label">
+                        <i class="bi bi-chat-left-text me-1"></i>Observaciones
+                    </label>
+                    <textarea class="form-control" 
+                              name="observaciones" 
+                              id="id_observaciones" 
+                              rows="3"
+                              placeholder="Agrega cualquier observación relevante..."></textarea>
+                </div>
+
+                <!-- Estado de ubicación -->
+                <div class="alert alert-secondary" id="ubicacion-status">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    <span id="ubicacion-texto">Esperando ubicación...</span>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg" id="btn-iniciar" disabled>
+                        <i class="bi bi-play-circle me-2"></i>Iniciar Visita
+                    </button>
+                    <a href="{% url 'planificacion_vendedor_dia' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let ubicacionCapturada = false;
+    const btnIniciar = document.getElementById('btn-iniciar');
+    const ubicacionStatus = document.getElementById('ubicacion-status');
+    const ubicacionTexto = document.getElementById('ubicacion-texto');
+    const inputLatitud = document.getElementById('id_latitud');
+    const inputLongitud = document.getElementById('id_longitud');
+    const inputFoto = document.getElementById('id_fotografia_referencia');
+    const previewContainer = document.getElementById('preview-container');
+    const previewImage = document.getElementById('preview-image');
+
+    // Capturar ubicación actual automáticamente
+    if (navigator.geolocation) {
+        ubicacionTexto.textContent = 'Capturando ubicación GPS...';
+        ubicacionStatus.className = 'alert alert-warning';
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                inputLatitud.value = position.coords.latitude;
+                inputLongitud.value = position.coords.longitude;
+                ubicacionCapturada = true;
+                
+                ubicacionTexto.innerHTML = `<i class="bi bi-check-circle me-2"></i>Ubicación capturada exitosamente`;
+                ubicacionStatus.className = 'alert alert-success';
+                
+                verificarFormularioCompleto();
+            },
+            function(error) {
+                console.error('Error de geolocalización:', error);
+                ubicacionTexto.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>Error: ${getErrorMessage(error)}`;
+                ubicacionStatus.className = 'alert alert-danger';
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de ubicación',
+                    html: `
+                        <p>${getErrorMessage(error)}</p>
+                        <p class="text-muted mt-2">Verifica los permisos de ubicación en tu navegador.</p>
+                    `
+                });
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        ubicacionTexto.innerHTML = '<i class="bi bi-x-circle me-2"></i>Geolocalización no disponible';
+        ubicacionStatus.className = 'alert alert-danger';
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Geolocalización no disponible',
+            text: 'Tu navegador no soporta geolocalización'
+        });
+    }
+
+    // Preview de la foto
+    inputFoto.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            verificarFormularioCompleto();
+        }
+    });
+
+    // Verificar si el formulario está completo
+    function verificarFormularioCompleto() {
+        if (ubicacionCapturada && inputFoto.files.length > 0) {
+            btnIniciar.disabled = false;
+        }
+    }
+
+    // Función auxiliar para mensajes de error de geolocalización
+    function getErrorMessage(error) {
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                return "Permiso de ubicación denegado. Por favor, permite el acceso a tu ubicación.";
+            case error.POSITION_UNAVAILABLE:
+                return "Información de ubicación no disponible.";
+            case error.TIMEOUT:
+                return "Tiempo de espera agotado al obtener la ubicación.";
+            default:
+                return "Error desconocido al obtener la ubicación.";
+        }
+    }
+
+    // Confirmar antes de enviar
+    document.getElementById('formIniciarVisita').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!ubicacionCapturada) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Ubicación no capturada',
+                text: 'Espera a que se capture tu ubicación GPS'
+            });
+            return false;
+        }
+
+        if (!inputFoto.files[0]) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Foto requerida',
+                text: 'Debes tomar una foto del negocio para iniciar la visita'
+            });
+            return false;
+        }
+        
+        Swal.fire({
+            title: '¿Iniciar visita?',
+            html: `
+                <p>Se registrará:</p>
+                <ul class="text-start">
+                    <li>Tu ubicación actual</li>
+                    <li>Hora de llegada</li>
+                    <li>Foto de referencia</li>
+                </ul>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-play-circle me-1"></i> Sí, iniciar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Iniciando visita...',
+                    html: '<div class="spinner-border text-success mb-2" role="status"></div><br>Procesando información',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false
+                });
+                
+                // Enviar formulario
+                this.submit();
+            }
+        });
+    });
+});
+</script>
+
+<style>
+#preview-container {
+    margin-top: 10px;
+}
+#preview-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+</style>
+{% endblock %}

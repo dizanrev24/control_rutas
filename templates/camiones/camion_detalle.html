@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle Camión - {{ camion.placa }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-truck"></i>
+            Detalle del Camión
+        </h2>
+        <div>
+            <a href="{% url 'camion_editar' camion.pk %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i>
+                Editar
+            </a>
+            <a href="{% url 'camion_listar' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del camión -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Información General
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Placa:</dt>
+                        <dd class="col-sm-7"><strong>{{ camion.placa }}</strong></dd>
+
+                        <dt class="col-sm-5">Marca:</dt>
+                        <dd class="col-sm-7">{{ camion.marca }}</dd>
+
+                        <dt class="col-sm-5">Modelo:</dt>
+                        <dd class="col-sm-7">{{ camion.modelo|default:"No especificado" }}</dd>
+
+                        <dt class="col-sm-5">Año:</dt>
+                        <dd class="col-sm-7">{{ camion.año|default:"-" }}</dd>
+
+                        <dt class="col-sm-5">Capacidad:</dt>
+                        <dd class="col-sm-7">
+                            {% if camion.capacidad_carga %}
+                                {{ camion.capacidad_carga|floatformat:2 }} kg
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-5">Estado:</dt>
+                        <dd class="col-sm-7">
+                            {% if camion.activo %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-5">Registro:</dt>
+                        <dd class="col-sm-7">
+                            <small class="text-muted">{{ camion.fecha_registro|date:"d/m/Y H:i" }}</small>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asignaciones recientes -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-map"></i>
+                        Asignaciones de Rutas (Últimas 10)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if asignaciones %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ruta</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for asignacion in asignaciones %}
+                                        <tr>
+                                            <td><strong>{{ asignacion.ruta.nombre }}</strong></td>
+                                            <td>{{ asignacion.fecha_inicio|date:"d/m/Y" }}</td>
+                                            <td>
+                                                {% if asignacion.fecha_fin %}
+                                                    {{ asignacion.fecha_fin|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">Activa</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if asignacion.activo %}
+                                                    <span class="badge bg-success">Activa</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactiva</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">No hay asignaciones registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Cargas recientes -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-arrow-in-down"></i>
+                        Cargas Recientes (Últimas 10)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if cargas %}
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Ruta</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for carga in cargas %}
+                                        <tr>
+                                            <td>{{ carga.fecha|date:"d/m/Y" }}</td>
+                                            <td>
+                                                {% if carga.asignacion_camion_ruta %}
+                                                    {{ carga.asignacion_camion_ruta.ruta.nombre }}
+                                                {% else %}
+                                                    <span class="text-muted">Sin ruta</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if carga.cerrado %}
+                                                    <span class="badge bg-secondary">Cerrada</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Abierta</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'carga_diaria_detalle' carga.pk %}" 
+                                                   class="btn btn-sm btn-info">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center mb-0">No hay cargas registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

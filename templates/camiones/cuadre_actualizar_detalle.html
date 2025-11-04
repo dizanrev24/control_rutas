@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil"></i>
+                        {{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <dl class="row mb-0">
+                            <dt class="col-5">Producto:</dt>
+                            <dd class="col-7"><strong>{{ detalle.producto.nombre }}</strong></dd>
+
+                            <dt class="col-5">Cargado:</dt>
+                            <dd class="col-7">{{ detalle.cantidad_cargada|floatformat:2 }}</dd>
+
+                            <dt class="col-5">Vendido:</dt>
+                            <dd class="col-7">{{ detalle.cantidad_vendida|floatformat:2 }}</dd>
+
+                            <dt class="col-5">Esperado:</dt>
+                            <dd class="col-7">{{ detalle.cantidad_esperada|floatformat:2 }}</dd>
+                        </dl>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'cuadre_diario_detalle' cuadre.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i>
+                                Actualizar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

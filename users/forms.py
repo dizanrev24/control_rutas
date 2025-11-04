@@ -26,14 +26,18 @@ class UsuarioCrearForm(UserCreationForm):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'first_name', 'last_name', 'email', 'dpi', 'rol', 'password1', 'password2']
+        fields = ['username', 'first_name', 'last_name', 'email', 'dpi', 'codigo_empleado', 'telefono', 'rol', 'password1', 'password2']
         widgets = {
             'username': forms.TextInput(attrs={'placeholder': 'Nombre de usuario'}),
             'dpi': forms.TextInput(attrs={'placeholder': '1234567890123'}),
+            'codigo_empleado': forms.TextInput(attrs={'placeholder': 'Código de empleado'}),
+            'telefono': forms.TextInput(attrs={'placeholder': '+502 1234-5678'}),
         }
         labels = {
             'username': 'Usuario',
             'dpi': 'DPI',
+            'codigo_empleado': 'Código de Empleado',
+            'telefono': 'Teléfono',
             'rol': 'Rol',
         }
 
@@ -52,6 +56,10 @@ class UsuarioCrearForm(UserCreationForm):
             ),
             Row(
                 Column('dpi', css_class='col-md-6 mb-3'),
+                Column('codigo_empleado', css_class='col-md-6 mb-3'),
+            ),
+            Row(
+                Column('telefono', css_class='col-md-6 mb-3'),
                 Column('rol', css_class='col-md-6 mb-3'),
             ),
             Row(
@@ -71,6 +79,21 @@ class UsuarioCrearForm(UserCreationForm):
         if dpi and len(dpi) != 13:
             raise forms.ValidationError('El DPI debe tener exactamente 13 dígitos.')
         return dpi
+
+    def clean(self):
+        cleaned_data = super().clean()
+        rol = cleaned_data.get('rol')
+        dpi = cleaned_data.get('dpi')
+        codigo_empleado = cleaned_data.get('codigo_empleado')
+
+        # Validar que vendedores tengan DPI y código
+        if rol == 'vendedor':
+            if not dpi:
+                self.add_error('dpi', 'Los vendedores deben tener un DPI registrado.')
+            if not codigo_empleado:
+                self.add_error('codigo_empleado', 'Los vendedores deben tener un código de empleado.')
+
+        return cleaned_data
 
 
 class UsuarioActualizarForm(forms.ModelForm):
@@ -94,14 +117,18 @@ class UsuarioActualizarForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ['username', 'first_name', 'last_name', 'email', 'dpi', 'rol', 'is_active']
+        fields = ['username', 'first_name', 'last_name', 'email', 'dpi', 'codigo_empleado', 'telefono', 'rol', 'is_active']
         widgets = {
             'username': forms.TextInput(attrs={'placeholder': 'Nombre de usuario'}),
             'dpi': forms.TextInput(attrs={'placeholder': '1234567890123'}),
+            'codigo_empleado': forms.TextInput(attrs={'placeholder': 'Código de empleado'}),
+            'telefono': forms.TextInput(attrs={'placeholder': '+502 1234-5678'}),
         }
         labels = {
             'username': 'Usuario',
             'dpi': 'DPI',
+            'codigo_empleado': 'Código de Empleado',
+            'telefono': 'Teléfono',
             'rol': 'Rol',
             'is_active': 'Activo',
         }
@@ -121,6 +148,10 @@ class UsuarioActualizarForm(forms.ModelForm):
             ),
             Row(
                 Column('dpi', css_class='col-md-6 mb-3'),
+                Column('codigo_empleado', css_class='col-md-6 mb-3'),
+            ),
+            Row(
+                Column('telefono', css_class='col-md-6 mb-3'),
                 Column('rol', css_class='col-md-6 mb-3'),
             ),
             Row(
@@ -139,6 +170,21 @@ class UsuarioActualizarForm(forms.ModelForm):
         if dpi and len(dpi) != 13:
             raise forms.ValidationError('El DPI debe tener exactamente 13 dígitos.')
         return dpi
+
+    def clean(self):
+        cleaned_data = super().clean()
+        rol = cleaned_data.get('rol')
+        dpi = cleaned_data.get('dpi')
+        codigo_empleado = cleaned_data.get('codigo_empleado')
+
+        # Validar que vendedores tengan DPI y código
+        if rol == 'vendedor':
+            if not dpi:
+                self.add_error('dpi', 'Los vendedores deben tener un DPI registrado.')
+            if not codigo_empleado:
+                self.add_error('codigo_empleado', 'Los vendedores deben tener un código de empleado.')
+
+        return cleaned_data
 
 
 class LoginForm(AuthenticationForm):

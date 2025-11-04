@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Productos - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-box-seam me-2"></i>Catálogo de Productos
+        </h1>
+        <a href="{% url 'producto_crear' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Producto
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-9">
+                    {{ filtro_form.buscar }}
+                </div>
+                <div class="col-md-2">
+                    {{ filtro_form.estado }}
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Información de resultados -->
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Mostrando <strong>{{ page_obj|length }}</strong> de <strong>{{ total_productos }}</strong> productos
+    </div>
+
+    <!-- Tabla de productos -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Precio Compra</th>
+                                <th>Precio Venta</th>
+                                <th>Margen</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in page_obj %}
+                            <tr>
+                                <td>
+                                    <strong>{{ producto.nombre }}</strong>
+                                    {% if producto.descripcion %}
+                                    <br><small class="text-muted">{{ producto.descripcion|truncatewords:10 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ producto.categoria.nombre }}</span>
+                                </td>
+                                <td>${{ producto.precio_compra|floatformat:2 }}</td>
+                                <td><strong>${{ producto.precio_venta|floatformat:2 }}</strong></td>
+                                <td>
+                                    <span class="badge {% if producto.margen_ganancia > 30 %}bg-success{% elif producto.margen_ganancia > 15 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ producto.margen_ganancia|floatformat:1 }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if producto.estado == 'activo' %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'producto_editar' producto.pk %}" 
+                                           class="btn btn-outline-primary"
+                                           title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        
+                                        {% if producto.estado == 'activo' %}
+                                            <button type="button" 
+                                                    class="btn btn-outline-danger"
+                                                    onclick="confirmarDesactivar({{ producto.pk }}, '{{ producto.nombre|escapejs }}')"
+                                                    title="Desactivar">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        {% else %}
+                                            <button type="button" 
+                                                    class="btn btn-outline-success"
+                                                    onclick="confirmarActivar({{ producto.pk }}, '{{ producto.nombre|escapejs }}')"
+                                                    title="Activar">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Paginación de productos">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Anterior</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="alert alert-warning text-center">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    No se encontraron productos con los filtros aplicados.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmarDesactivar(productoId, productoNombre) {
+        Swal.fire({
+            title: '¿Desactivar Producto?',
+            html: `¿Estás seguro de desactivar el producto <strong>${productoNombre}</strong>?<br><small>Podrás reactivarlo más tarde.</small>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/productos/eliminar/${productoId}/`;
+            }
+        });
+    }
+
+    function confirmarActivar(productoId, productoNombre) {
+        Swal.fire({
+            title: '¿Activar Producto?',
+            html: `¿Estás seguro de activar el producto <strong>${productoNombre}</strong>?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, activar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/productos/activar/${productoId}/`;
+            }
+        });
+    }
+</script>
+{% endblock %}

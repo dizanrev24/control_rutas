@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Registrar Cliente Nuevo - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-person-plus me-2"></i>Registrar Cliente Nuevo
+        </h1>
+        <a href="{% url 'planificacion_vendedor_dia' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver a Mi Día
+        </a>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        El cliente se agregará automáticamente a tu ruta y aparecerá en tu planificación del día de hoy.
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% crispy form %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Capturar ubicación actual del navegador
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+        document.querySelector('input[name="latitud"]').value = position.coords.latitude;
+        document.querySelector('input[name="longitud"]').value = position.coords.longitude;
+    }, function(error) {
+        console.log('Error al obtener ubicación:', error);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pedido #{{ pedido.id }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #17a2b8;
+            padding-bottom: 15px;
+        }
+        .company-name {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .document-title {
+            font-size: 16pt;
+            color: #17a2b8;
+        }
+        .info-section {
+            margin-bottom: 20px;
+        }
+        .info-row {
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+        }
+        .estado-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        .estado-pendiente {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .estado-confirmado {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .estado-entregado {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .estado-cancelado {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background-color: #e7f6f8;
+            border: 1px solid #17a2b8;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+            color: #17a2b8;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+        .total-row {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 10px;
+            color: #17a2b8;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 10pt;
+            color: #666;
+        }
+        .observations {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e7f6f8;
+            border-left: 4px solid #17a2b8;
+        }
+        .alert-box {
+            padding: 15px;
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">Sistema de Gestión - Control de Rutas</div>
+        <div class="document-title">Pedido para Entrega Futura</div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-row">
+            <span class="info-label">No. Pedido:</span>
+            <span>#{{ pedido.id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Fecha:</span>
+            <span>{{ pedido.fecha_pedido|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Vendedor:</span>
+            <span>{{ pedido.detalle_planificacion.planificacion.asignacion.vendedor.usuario.get_full_name }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Estado:</span>
+            <span class="estado-badge estado-{{ pedido.estado }}">
+                {% if pedido.estado == 'pendiente' %}PENDIENTE
+                {% elif pedido.estado == 'confirmado' %}CONFIRMADO
+                {% elif pedido.estado == 'entregado' %}ENTREGADO
+                {% elif pedido.estado == 'cancelado' %}CANCELADO
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h3 style="margin-bottom: 10px; border-bottom: 1px solid #17a2b8; padding-bottom: 5px; color: #17a2b8;">Cliente</h3>
+        <div class="info-row">
+            <span class="info-label">Nombre:</span>
+            <span>{{ pedido.cliente.nombre }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">NIT:</span>
+            <span>{{ pedido.cliente.nit }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Dirección:</span>
+            <span>{{ pedido.cliente.direccion }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Teléfono:</span>
+            <span>{{ pedido.cliente.telefono|default:"N/A" }}</span>
+        </div>
+    </div>
+
+    <div class="alert-box">
+        <strong>⚠️ Nota Importante:</strong> Este pedido NO descarga stock del camión.
+        La entrega será coordinada posteriormente por la secretaría.
+    </div>
+
+    <h3 style="margin-top: 30px; margin-bottom: 10px; border-bottom: 1px solid #17a2b8; padding-bottom: 5px; color: #17a2b8;">Detalle de Productos</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 10%;" class="text-center">Cant.</th>
+                <th style="width: 45%;">Producto</th>
+                <th style="width: 15%;" class="text-right">Precio Unit.</th>
+                <th style="width: 15%;" class="text-right">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in pedido.detalles.all %}
+            <tr>
+                <td class="text-center">{{ detalle.cantidad }}</td>
+                <td>{{ detalle.producto.nombre }}</td>
+                <td class="text-right">${{ detalle.precio_unitario|floatformat:2 }}</td>
+                <td class="text-right">${{ detalle.subtotal|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-section">
+        <div class="total-row">
+            Total: ${{ pedido.calcular_total|floatformat:2 }}
+        </div>
+    </div>
+
+    {% if pedido.observaciones %}
+    <div class="observations">
+        <strong>Observaciones:</strong><br>
+        {{ pedido.observaciones }}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Este documento es un comprobante de pedido generado automáticamente.</p>
+        <p>Generado el {{ now|date:"d/m/Y H:i" }}</p>
+    </div>
+</body>
+</html>

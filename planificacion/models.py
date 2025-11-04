@@ -6,6 +6,11 @@ class Planificacion(models.Model):
     """
     Planificación de visitas para una fecha específica (RF-04)
     """
+    TIPO_CHOICES = [
+        ('planificado', 'Planificado'),
+        ('no_planificado', 'No Planificado - Cliente Nuevo'),
+    ]
+
     asignacion = models.ForeignKey(Asignacion, on_delete=models.CASCADE,
                                   related_name='planificaciones',
                                   verbose_name="Asignación")
@@ -13,6 +18,12 @@ class Planificacion(models.Model):
                                     related_name='planificaciones',
                                     verbose_name="Detalle de Ruta")
     fecha = models.DateField(verbose_name="Fecha Planificada")
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default='planificado',
+        verbose_name="Tipo de Planificación"
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True,
                                          verbose_name="Fecha de Creación")
 
@@ -47,8 +58,26 @@ class DetallePlanificacion(models.Model):
                                   verbose_name="Longitud de Visita")
     
     # Fotografía de la visita
-    fotografia_referencia = models.ImageField(upload_to='visitas/', null=True, blank=True,
-                                             verbose_name="Fotografía de la Visita")
+    fotografia_referencia = models.ImageField(
+        upload_to='visitas/', null=True, blank=True,
+        verbose_name="Fotografía de la Visita"
+    )
+    hash_foto = models.CharField(
+        max_length=64,
+        blank=True,
+        verbose_name="Hash de la Foto",
+        help_text="MD5 hash para detectar fotos duplicadas"
+    )
+    foto_duplicada = models.BooleanField(
+        default=False,
+        verbose_name="Foto Duplicada",
+        help_text="Solo visible para administrador"
+    )
+    ubicacion_valida = models.BooleanField(
+        default=True,
+        verbose_name="Ubicación Válida",
+        help_text="Validada con un margen de 100m. Solo visible para admin/secretaria"
+    )
     
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente',
                             verbose_name="Estado")

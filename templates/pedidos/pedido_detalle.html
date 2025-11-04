@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Pedido - Control de Rutas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalle de Pedido #{{ pedido.id }}</h2>
+        <div>
+            <a href="{% url 'pedido_pdf' pedido.pk %}" class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-pdf"></i> Generar PDF
+            </a>
+            <a href="{% url 'pedido_listar' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al listado
+            </a>
+        </div>
+    </div>
+
+    <!-- Información general -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Fecha:</th>
+                            <td>{{ pedido.fecha|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cliente:</th>
+                            <td>{{ pedido.cliente.nombre }}</td>
+                        </tr>
+                        <tr>
+                            <th>Dirección:</th>
+                            <td>{{ pedido.cliente.direccion|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Teléfono:</th>
+                            <td>{{ pedido.cliente.telefono|default:"-" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Estado y Vendedor</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Estado:</th>
+                            <td>
+                                {% if pedido.estado == 'pendiente' %}
+                                <span class="badge bg-warning">Pendiente</span>
+                                {% elif pedido.estado == 'procesando' %}
+                                <span class="badge bg-info">Procesando</span>
+                                {% elif pedido.estado == 'entregado' %}
+                                <span class="badge bg-success">Entregado</span>
+                                {% elif pedido.estado == 'cancelado' %}
+                                <span class="badge bg-danger">Cancelado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Vendedor:</th>
+                            <td>{{ pedido.vendedor.get_full_name }}</td>
+                        </tr>
+                    </table>
+
+                    {% if request.user.puede_gestionar_rutas and pedido.estado != 'cancelado' and pedido.estado != 'entregado' %}
+                    <hr>
+                    <form method="post" action="{% url 'pedido_cambiar_estado' pedido.pk %}" id="formCambiarEstado">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="nuevo_estado" class="form-label">Cambiar Estado:</label>
+                            <select class="form-select" id="nuevo_estado" name="estado" required>
+                                <option value="">Seleccione...</option>
+                                <option value="pendiente" {% if pedido.estado == 'pendiente' %}disabled{% endif %}>Pendiente</option>
+                                <option value="procesando" {% if pedido.estado == 'procesando' %}disabled{% endif %}>Procesando</option>
+                                <option value="entregado">Entregado</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Actualizar Estado
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total del pedido -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="mb-2">Total del Pedido</h5>
+                    <h2>L. {{ pedido.total|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalle de productos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Detalle de Productos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-end">Precio Unitario</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detalle in pedido.detalles.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ detalle.producto.nombre }}</strong>
+                                {% if detalle.producto.descripcion %}
+                                <br><small class="text-muted">{{ detalle.producto.descripcion }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ detalle.cantidad }}</td>
+                            <td class="text-end">L. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-end">
+                                <strong>L. {{ detalle.subtotal|floatformat:2 }}</strong>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No hay productos en este pedido.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-success">
+                            <th colspan="4" class="text-end">Total:</th>
+                            <th class="text-end">L. {{ pedido.total|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional si existe detalle_planificacion -->
+    {% if pedido.detalle_planificacion %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Información de Visita</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Estado de Visita:</strong> {{ pedido.detalle_planificacion.get_estado_display }}</p>
+                    <p><strong>Latitud:</strong> {{ pedido.detalle_planificacion.latitud|default:"-" }}</p>
+                    <p><strong>Longitud:</strong> {{ pedido.detalle_planificacion.longitud|default:"-" }}</p>
+                </div>
+                <div class="col-md-6">
+                    {% if pedido.detalle_planificacion.foto_visita %}
+                    <p><strong>Foto de Visita:</strong></p>
+                    <img src="{{ pedido.detalle_planificacion.foto_visita.url }}" alt="Foto de visita" class="img-thumbnail" style="max-width: 300px;">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formCambiarEstado');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nuevoEstado = document.getElementById('nuevo_estado').value;
+            if (!nuevoEstado) {
+                Swal.fire('Error', 'Debe seleccionar un estado', 'error');
+                return;
+            }
+            
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: `¿Desea cambiar el estado del pedido a "${nuevoEstado}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

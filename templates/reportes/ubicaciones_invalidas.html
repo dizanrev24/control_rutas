@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ubicaciones Inválidas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-geo-alt text-danger"></i>
+                Reporte de Ubicaciones Inválidas
+            </h2>
+            <p class="text-muted">Visitas donde la ubicación GPS no coincide con la esperada</p>
+        </div>
+        <a href="{% url 'reporte_dashboard' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i>
+            Volver
+        </a>
+    </div>
+
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Ubicaciones Inválidas</h6>
+                    <h2 class="text-danger mb-0">{{ total_invalidas }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Vendedores Afectados</h6>
+                    <h2 class="text-warning mb-0">{{ por_vendedor|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Por vendedor -->
+    {% if por_vendedor %}
+        {% for vendedor, detalles in por_vendedor.items %}
+            <div class="card mb-3">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge"></i>
+                        {{ vendedor }}
+                        <span class="badge bg-dark float-end">{{ detalles|length }} irregularidades</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Ruta</th>
+                                    <th>Cliente</th>
+                                    <th>Hora Llegada</th>
+                                    <th>Coordenadas</th>
+                                    <th>Foto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in detalles %}
+                                    <tr>
+                                        <td>{{ detalle.planificacion.fecha|date:"d/m/Y" }}</td>
+                                        <td>{{ detalle.planificacion.asignacion.ruta.nombre }}</td>
+                                        <td>
+                                            <strong>{{ detalle.planificacion.ruta_detalle.cliente.nombre }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if detalle.hora_llegada %}
+                                                {{ detalle.hora_llegada|time:"H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if detalle.latitud and detalle.longitud %}
+                                                <small class="text-muted">
+                                                    {{ detalle.latitud|floatformat:6 }}, {{ detalle.longitud|floatformat:6 }}
+                                                </small>
+                                            {% else %}
+                                                <span class="text-muted">Sin coordenadas</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if detalle.foto_duplicada %}
+                                                <span class="badge bg-warning">Duplicada</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">OK</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-success text-center">
+            <i class="bi bi-check-circle"></i>
+            <strong>¡Excelente!</strong> Todas las ubicaciones son válidas.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

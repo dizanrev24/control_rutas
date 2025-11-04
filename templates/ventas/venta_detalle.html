@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Venta - Control de Rutas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalle de Venta #{{ venta.id }}</h2>
+        <div>
+            <a href="{% url 'venta_pdf' venta.pk %}" class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-pdf"></i> Generar PDF
+            </a>
+            <a href="{% url 'venta_listar' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al listado
+            </a>
+        </div>
+    </div>
+
+    <!-- Información general -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información General</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Fecha:</th>
+                            <td>{{ venta.fecha|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cliente:</th>
+                            <td>{{ venta.cliente.nombre }}</td>
+                        </tr>
+                        <tr>
+                            <th>Dirección:</th>
+                            <td>{{ venta.cliente.direccion|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Teléfono:</th>
+                            <td>{{ venta.cliente.telefono|default:"-" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Datos de Vendedor y Camión</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th width="40%">Vendedor:</th>
+                            <td>{{ venta.vendedor.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Camión:</th>
+                            <td>{{ venta.camion.codigo|default:"-" }}</td>
+                        </tr>
+                        {% if venta.camion %}
+                        <tr>
+                            <th>Placa:</th>
+                            <td>{{ venta.camion.placa }}</td>
+                        </tr>
+                        <tr>
+                            <th>Marca/Modelo:</th>
+                            <td>{{ venta.camion.marca }} {{ venta.camion.modelo }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Totales -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Total Bruto</h6>
+                    <h3 class="text-primary">L. {{ venta.total_bruto|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Descuento</h6>
+                    <h3 class="text-warning">L. {{ venta.descuento|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h6 class="mb-2">Total Neto</h6>
+                    <h3>L. {{ venta.total_neto|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalle de productos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Detalle de Productos</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-end">Precio Unitario</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for detalle in venta.detalles.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ detalle.producto.nombre }}</strong>
+                                {% if detalle.producto.descripcion %}
+                                <br><small class="text-muted">{{ detalle.producto.descripcion }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">{{ detalle.cantidad }}</td>
+                            <td class="text-end">Q. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-end">
+                                <strong>L. {{ detalle.subtotal|floatformat:2 }}</strong>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No hay productos en esta venta.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-active">
+                            <th colspan="4" class="text-end">Total Bruto:</th>
+                            <th class="text-end">L. {{ venta.total_bruto|floatformat:2 }}</th>
+                        </tr>
+                        <tr class="table-active">
+                            <th colspan="4" class="text-end">Descuento:</th>
+                            <th class="text-end text-warning">- Q. {{ venta.descuento|floatformat:2 }}</th>
+                        </tr>
+                        <tr class="table-success">
+                            <th colspan="4" class="text-end">Total Neto:</th>
+                            <th class="text-end">L. {{ venta.total_neto|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional si existe detalle_planificacion -->
+    {% if venta.detalle_planificacion %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Información de Visita</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Estado de Visita:</strong> {{ venta.detalle_planificacion.get_estado_display }}</p>
+                    <p><strong>Latitud:</strong> {{ venta.detalle_planificacion.latitud|default:"-" }}</p>
+                    <p><strong>Longitud:</strong> {{ venta.detalle_planificacion.longitud|default:"-" }}</p>
+                </div>
+                <div class="col-md-6">
+                    {% if venta.detalle_planificacion.foto_visita %}
+                    <p><strong>Foto de Visita:</strong></p>
+                    <img src="{{ venta.detalle_planificacion.foto_visita.url }}" alt="Foto de visita" class="img-thumbnail" style="max-width: 300px;">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

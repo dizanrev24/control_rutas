@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Asignaciones - Control de Rutas{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="h3 mb-0">
+                <i class="bi bi-calendar-check me-2"></i>
+                Asignaciones de Rutas
+            </h2>
+            <p class="text-muted mb-0">Gestión de asignación de rutas a vendedores</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'asignacion_crear' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>
+                Nueva Asignación
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="bi bi-funnel me-1"></i>
+                Filtros
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                {% for field in filtro_form %}
+                <div class="col-md-4">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-search me-1"></i>
+                        Filtrar
+                    </button>
+                    <a href="{% url 'asignacion_listar' %}" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Total Asignaciones</h6>
+                            <h4 class="mb-0">{{ total_asignaciones }}</h4>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-clipboard-check fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de asignaciones -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Vendedor</th>
+                                <th>Ruta</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asignacion in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-2">
+                                            {% if asignacion.vendedor.get_full_name %}
+                                                {{ asignacion.vendedor.get_full_name|slice:":1"|upper }}
+                                            {% else %}
+                                                {{ asignacion.vendedor.username|slice:":1"|upper }}
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">
+                                                {% if asignacion.vendedor.get_full_name %}
+                                                    {{ asignacion.vendedor.get_full_name }}
+                                                {% else %}
+                                                    {{ asignacion.vendedor.username }}
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted">
+                                                {% if asignacion.vendedor.codigo_empleado %}
+                                                    {{ asignacion.vendedor.codigo_empleado }}
+                                                {% else %}
+                                                    {{ asignacion.vendedor.email }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-medium">{{ asignacion.ruta.nombre }}</div>
+                                    <small class="text-muted">{{ asignacion.ruta.descripcion|truncatewords:5 }}</small>
+                                </td>
+                                <td>
+                                    <i class="bi bi-calendar3 text-muted me-1"></i>
+                                    {{ asignacion.fecha_inicio|date:"d/m/Y" }}
+                                </td>
+                                <td>
+                                    {% if asignacion.fecha_fin %}
+                                        <i class="bi bi-calendar3 text-muted me-1"></i>
+                                        {{ asignacion.fecha_fin|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="badge bg-info">Indefinida</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if asignacion.esta_activa %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            Activa
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            Finalizada
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+    <div class="btn-group btn-group-sm">
+        <a href="{% url 'asignacion_detalle' asignacion.pk %}" 
+           class="btn btn-outline-primary"
+           title="Ver detalle">
+            <i class="bi bi-eye"></i>
+        </a>
+        {% if asignacion.esta_activa %}
+        <button type="button"
+                class="btn btn-outline-warning"
+                title="Finalizar asignación"
+                onclick="confirmarFinalizarAsignacion({{ asignacion.pk }})">
+            <i class="bi bi-stop-circle"></i>
+        </button>
+        {% endif %}
+        <button type="button"
+                class="btn btn-outline-info"
+                title="Regenerar planificaciones"
+                onclick="confirmarRegenerarPlanificaciones({{ asignacion.pk }})">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+    </div>
+    
+    <!-- Formularios ocultos -->
+    <form id="form-finalizar-{{ asignacion.pk }}" 
+          action="{% url 'asignacion_finalizar' asignacion.pk %}" 
+          method="POST" style="display: none;">
+        {% csrf_token %}
+    </form>
+    
+    <form id="form-regenerar-{{ asignacion.pk }}" 
+          action="{% url 'asignacion_regenerar' asignacion.pk %}" 
+          method="POST" style="display: none;">
+        {% csrf_token %}
+    </form>
+</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Navegación de asignaciones">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No hay asignaciones registradas.</p>
+                    <a href="{% url 'asignacion_crear' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Crear Primera Asignación
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>
+
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>
+
+<script>
+function confirmarFinalizarAsignacion(asignacionId) {
+    Swal.fire({
+        title: '¿Finalizar asignación?',
+        html: `
+            <p>Esta acción marcará la asignación como <strong>finalizada</strong>.</p>
+            <p class="text-warning mt-2">
+                <i class="bi bi-exclamation-triangle"></i>
+                Ya no se generarán nuevas planificaciones automáticamente.
+            </p>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ffc107',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-stop-circle me-1"></i> Sí, finalizar',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Cancelar',
+        reverseButtons: true,
+        customClass: {
+            confirmButton: 'btn btn-warning',
+            cancelButton: 'btn btn-secondary'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Finalizando asignación',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar formulario
+            document.getElementById('form-finalizar-' + asignacionId).submit();
+        }
+    });
+}
+
+function confirmarRegenerarPlanificaciones(asignacionId) {
+    Swal.fire({
+        title: '¿Regenerar planificaciones?',
+        html: `
+            <p>Esta acción recreará las planificaciones futuras.</p>
+            <p class="text-danger mt-2">
+                <i class="bi bi-exclamation-triangle"></i>
+                Se eliminarán las planificaciones <strong>no visitadas</strong>.
+            </p>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0dcaf0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-arrow-clockwise me-1"></i> Sí, regenerar',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Cancelar',
+        reverseButtons: true,
+        customClass: {
+            confirmButton: 'btn btn-info',
+            cancelButton: 'btn btn-secondary'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Regenerando planificaciones',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar formulario
+            document.getElementById('form-regenerar-' + asignacionId).submit();
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Planificación del Día - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-calendar-check me-2"></i>Mi Planificación - {{ fecha|date:"d/m/Y" }}
+        </h1>
+        <a href="{% url 'vendedor_crear_cliente_nuevo' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Cliente
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h6 class="m-0"><i class="bi bi-truck me-2"></i>Ruta: {{ asignacion.ruta.nombre }}</h6>
+        </div>
+        <div class="card-body">
+            <p class="mb-0"><strong>Total de visitas programadas:</strong> {{ planificaciones|length }}</p>
+        </div>
+    </div>
+
+    {% if planificaciones %}
+        <div class="row">
+            {% for item in planificaciones %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 {% if item.es_nuevo %}border-warning{% elif item.detalle.estado == 'visitado' and item.detalle.hora_salida %}border-success{% elif item.visita_activa %}border-info{% endif %}">
+                    <div class="card-header {% if item.es_nuevo %}bg-warning{% elif item.detalle.estado == 'visitado' and item.detalle.hora_salida %}bg-success text-white{% elif item.visita_activa %}bg-info text-white{% endif %}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                {% if item.es_nuevo %}
+                                    <i class="bi bi-star-fill me-1"></i>NUEVO
+                                {% else %}
+                                    #{{ item.planificacion.ruta_detalle.orden_visita }}
+                                {% endif %}
+                            </h6>
+                            {% if item.detalle.estado == 'visitado' and item.detalle.hora_salida %}
+                                <span class="badge bg-light text-dark">Completado</span>
+                            {% elif item.visita_activa %}
+                                <span class="badge bg-light text-dark">En Visita</span>
+                            {% elif item.detalle.estado == 'no_visitado' %}
+                                <span class="badge bg-secondary">No Visitado</span>
+                            {% elif item.detalle.estado == 'cerrado' %}
+                                <span class="badge bg-secondary">Cerrado</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">Pendiente</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.cliente.nombre }}</h5>
+                        <p class="card-text text-muted mb-2">
+                            <i class="bi bi-card-text me-1"></i>{{ item.cliente.nit }}<br>
+                            <i class="bi bi-telephone me-1"></i>{{ item.cliente.telefono }}<br>
+                            <i class="bi bi-geo-alt me-1"></i>{{ item.cliente.direccion|truncatewords:10 }}
+                        </p>
+                        
+                        {% if item.detalle.hora_llegada %}
+                            <small class="text-muted">
+                                <i class="bi bi-clock me-1"></i>
+                                Llegada: {{ item.detalle.hora_llegada|date:"H:i" }}
+                                {% if item.detalle.hora_salida %}
+                                    | Salida: {{ item.detalle.hora_salida|date:"H:i" }}
+                                {% endif %}
+                            </small>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if item.cliente.latitud and item.cliente.longitud %}
+                            <a href="https://www.google.com/maps?q={{ item.cliente.latitud }},{{ item.cliente.longitud }}" 
+                               target="_blank" class="btn btn-sm btn-outline-primary" title="Ver en mapa">
+                                <i class="bi bi-geo-alt"></i> Ubicación
+                            </a>
+                        {% endif %}
+                        
+                        {% if item.detalle.estado == 'visitado' and item.detalle.hora_salida %}
+                            <!-- Visita finalizada -->
+                            <button class="btn btn-sm btn-secondary" disabled>
+                                <i class="bi bi-check-circle"></i> Finalizado
+                            </button>
+                        {% elif item.visita_activa %}
+                            <!-- Visita activa - puede continuar -->
+                            <a href="{% url 'continuar_visita' item.detalle.pk %}" class="btn btn-sm btn-info">
+                                <i class="bi bi-arrow-right-circle"></i> Continuar
+                            </a>
+                        {% elif item.detalle.estado == 'no_visitado' or item.detalle.estado == 'cerrado' %}
+                            <!-- Ya marcado como no visitado/cerrado -->
+                            <button class="btn btn-sm btn-secondary" disabled>
+                                {{ item.detalle.get_estado_display }}
+                            </button>
+                        {% else %}
+                            <!-- Pendiente - puede iniciar o marcar como no visitado -->
+                            <a href="{% url 'iniciar_visita' item.planificacion.pk %}" class="btn btn-sm btn-success">
+                                <i class="bi bi-play-circle"></i> Iniciar
+                            </a>
+                            <a href="{% url 'marcar_no_visitado' item.planificacion.pk %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-x-circle"></i> No Visitar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            No tienes planificación para hoy. Puedes crear clientes nuevos que se agregarán automáticamente a tu día.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
