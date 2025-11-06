@@ -10,6 +10,9 @@ urlpatterns = [
     path('editar/<int:pk>/', views.producto_editar, name='producto_editar'),
     path('eliminar/<int:pk>/', views.producto_eliminar, name='producto_eliminar'),
     path('activar/<int:pk>/', views.producto_activar, name='producto_activar'),
+    # Importación/Exportación Excel
+    path('excel/plantilla/', views.producto_descargar_plantilla, name='producto_descargar_plantilla'),
+    path('excel/importar/', views.producto_importar_excel, name='producto_importar_excel'),
     path('categorias/', views.categoria_lista, name='categoria_lista'),
     path('categorias/crear/', views.categoria_crear, name='categoria_crear'),
     path('categorias/<int:pk>/editar/', views.categoria_editar, name='categoria_editar'),

@@ -9,9 +9,17 @@
         <h1 class="h3 mb-0">
             <i class="bi bi-box-seam me-2"></i>Catálogo de Productos
         </h1>
-        <a href="{% url 'producto_crear' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>Nuevo Producto
-        </a>
+        <div class="btn-group">
+            <a href="{% url 'producto_descargar_plantilla' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-download me-1"></i>Descargar plantilla
+            </a>
+            <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalImportarProductos">
+                <i class="bi bi-upload me-1"></i>Cargar Excel
+            </button>
+            <a href="{% url 'producto_crear' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo Producto
+            </a>
+        </div>
     </div>
 
     <!-- Filtros -->
@@ -191,4 +199,30 @@
         });
     }
 </script>
+
+<!-- Modal Importar Productos -->
+<div class="modal fade" id="modalImportarProductos" tabindex="-1" aria-labelledby="modalImportarProductosLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImportarProductosLabel"><i class="bi bi-upload me-2"></i>Importar Productos desde Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'producto_importar_excel' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="archivo_excel" class="form-label">Archivo Excel (.xlsx)</label>
+                        <input class="form-control" type="file" id="archivo_excel" name="archivo_excel" accept=".xlsx" required>
+                        <div class="form-text">Usa la <a href="{% url 'producto_descargar_plantilla' %}">plantilla</a> para evitar errores. Se crearán categorías automáticamente si no existen.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+ </div>
 {% endblock %}

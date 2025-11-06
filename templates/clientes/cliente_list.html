@@ -9,9 +9,17 @@
         <h1 class="h3 mb-0">
             <i class="bi bi-shop me-2"></i>Gestión de Clientes
         </h1>
-        <a href="{% url 'cliente_crear' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>Nuevo Cliente
-        </a>
+        <div class="btn-group">
+            <a href="{% url 'cliente_descargar_plantilla' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-download me-1"></i>Descargar plantilla
+            </a>
+            <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalImportarClientes">
+                <i class="bi bi-upload me-1"></i>Cargar Excel
+            </button>
+            <a href="{% url 'cliente_crear' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo Cliente
+            </a>
+        </div>
     </div>
 
     <div class="card">
@@ -149,4 +157,30 @@ function activarCliente(id) {
     });
 }
 </script>
+
+<!-- Modal Importar Clientes -->
+<div class="modal fade" id="modalImportarClientes" tabindex="-1" aria-labelledby="modalImportarClientesLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImportarClientesLabel"><i class="bi bi-upload me-2"></i>Importar Clientes desde Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'cliente_importar_excel' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="archivo_excel_clientes" class="form-label">Archivo Excel (.xlsx)</label>
+                        <input class="form-control" type="file" id="archivo_excel_clientes" name="archivo_excel" accept=".xlsx" required>
+                        <div class="form-text">Usa la <a href="{% url 'cliente_descargar_plantilla' %}">plantilla</a>. Si el NIT ya existe se actualizará el cliente; de lo contrario se creará uno nuevo.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+ </div>
 {% endblock %}
