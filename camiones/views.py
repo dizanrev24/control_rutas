@@ -9,6 +9,8 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.utils import timezone
 from .models import Camion, AsignacionCamionRuta, CargaCamion, CargaCamionDetalle, CuadreDiario, CuadreDiarioDetalle
+from ventas.models import Venta
+from pedidos.models import Pedido
 from .forms import CamionForm, CamionFiltroForm, AsignacionCamionRutaForm, CargaCamionForm, CargaCamionDetalleForm, CuadreDiarioDetalleForm
 
 
@@ -418,12 +420,35 @@ def cuadre_diario_detalle(request, pk):
     # Calcular totales
     total_diferencias = sum(d.diferencia for d in detalles)
     tiene_diferencias = any(d.diferencia != 0 for d in detalles)
+
+    # Resumen de ventas y pedidos del día para la ruta/camión
+    carga = cuadre.carga_camion
+    ruta = carga.asignacion_camion_ruta.ruta if carga.asignacion_camion_ruta else None
+    fecha = carga.fecha
+
+    ventas_qs = Venta.objects.filter(carga_camion=carga, fecha__date=fecha)
+    ventas_total = ventas_qs.aggregate(total=Sum('total'))['total'] or 0
+    ventas_count = ventas_qs.count()
+
+    pedidos_qs = Pedido.objects.filter(
+        detalle_planificacion__planificacion__fecha=fecha
+    )
+    if ruta:
+        pedidos_qs = pedidos_qs.filter(
+            detalle_planificacion__planificacion__asignacion__ruta=ruta
+        )
+    pedidos_total = pedidos_qs.aggregate(total=Sum('total'))['total'] or 0
+    pedidos_count = pedidos_qs.count()
     
     context = {
         'cuadre': cuadre,
         'detalles': detalles,
         'total_diferencias': total_diferencias,
         'tiene_diferencias': tiene_diferencias,
+        'ventas_total': ventas_total,
+        'ventas_count': ventas_count,
+        'pedidos_total': pedidos_total,
+        'pedidos_count': pedidos_count,
     }
     
     return render(request, 'camiones/cuadre_detalle.html', context)

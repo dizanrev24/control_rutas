@@ -32,22 +32,22 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label for="vendedor_id" class="form-label">Vendedor</label>
-                    <select class="form-select" id="vendedor_id" name="vendedor_id">
+                    <label for="vendedor" class="form-label">Vendedor</label>
+                    <select class="form-select" id="vendedor" name="vendedor">
                         <option value="">Todos</option>
                         {% for vendedor in vendedores %}
-                        <option value="{{ vendedor.id }}" {% if request.GET.vendedor_id == vendedor.id|stringformat:"s" %}selected{% endif %}>
-                            {{ vendedor.get_full_name }}
+                        <option value="{{ vendedor.id }}" {% if request.GET.vendedor == vendedor.id|stringformat:"s" or request.GET.vendedor_id == vendedor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ vendedor.get_full_name|default:vendedor.username }}
                         </option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label for="cliente_id" class="form-label">Cliente</label>
-                    <select class="form-select" id="cliente_id" name="cliente_id">
+                    <label for="cliente" class="form-label">Cliente</label>
+                    <select class="form-select" id="cliente" name="cliente">
                         <option value="">Todos</option>
                         {% for cliente in clientes %}
-                        <option value="{{ cliente.id }}" {% if request.GET.cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
+                        <option value="{{ cliente.id }}" {% if request.GET.cliente == cliente.id|stringformat:"s" or request.GET.cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
                             {{ cliente.nombre }}
                         </option>
                         {% endfor %}
@@ -72,7 +72,7 @@
                 <div class="card-body">
                     <h6 class="mb-2">Pendientes</h6>
                     <h3>{{ por_estado.pendiente.count|default:0 }}</h3>
-                    <small>Q. {{ por_estado.pendiente.total|default:0|floatformat:2 }}</small>
+                    <small>Q {{ por_estado.pendiente.total|default:0|floatformat:2 }}</small>
                 </div>
             </div>
         </div>
@@ -81,7 +81,7 @@
                 <div class="card-body">
                     <h6 class="mb-2">Procesando</h6>
                     <h3>{{ por_estado.procesando.count|default:0 }}</h3>
-                    <small>Q. {{ por_estado.procesando.total|default:0|floatformat:2 }}</small>
+                    <small>Q {{ por_estado.procesando.total|default:0|floatformat:2 }}</small>
                 </div>
             </div>
         </div>
@@ -90,7 +90,7 @@
                 <div class="card-body">
                     <h6 class="mb-2">Entregados</h6>
                     <h3>{{ por_estado.entregado.count|default:0 }}</h3>
-                    <small>Q. {{ por_estado.entregado.total|default:0|floatformat:2 }}</small>
+                    <small>Q {{ por_estado.entregado.total|default:0|floatformat:2 }}</small>
                 </div>
             </div>
         </div>
@@ -99,7 +99,7 @@
                 <div class="card-body">
                     <h6 class="mb-2">Cancelados</h6>
                     <h3>{{ por_estado.cancelado.count|default:0 }}</h3>
-                    <small>Q. {{ por_estado.cancelado.total|default:0|floatformat:2 }}</small>
+                    <small>Q {{ por_estado.cancelado.total|default:0|floatformat:2 }}</small>
                 </div>
             </div>
         </div>
@@ -125,7 +125,7 @@
                         <tr>
                             <td>{{ pedido.fecha|date:"d/m/Y H:i" }}</td>
                             <td>{{ pedido.cliente.nombre }}</td>
-                            <td>{{ pedido.vendedor.get_full_name }}</td>
+                            <td>{{ pedido.detalle_planificacion.planificacion.asignacion.vendedor.get_full_name|default:pedido.detalle_planificacion.planificacion.asignacion.vendedor.username }}</td>
                             <td>
                                 {% if pedido.estado == 'pendiente' %}
                                 <span class="badge bg-warning">Pendiente</span>
@@ -137,7 +137,7 @@
                                 <span class="badge bg-danger">Cancelado</span>
                                 {% endif %}
                             </td>
-                            <td class="text-end"><strong>L. {{ pedido.total|floatformat:2 }}</strong></td>
+                            <td class="text-end"><strong>Q {{ pedido.total|floatformat:2 }}</strong></td>
                             <td>
                                 <a href="{% url 'pedido_detalle' pedido.pk %}" class="btn btn-sm btn-info" title="Ver detalle">
                                     <i class="bi bi-eye"></i>

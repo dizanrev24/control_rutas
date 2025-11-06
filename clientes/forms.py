@@ -18,6 +18,8 @@ class ClienteForm(forms.ModelForm):
         widgets = {
             'direccion': forms.Textarea(attrs={'rows': 3}),
             'referencia_ubicacion': forms.Textarea(attrs={'rows': 2}),
+            'latitud': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': '14.6…'}),
+            'longitud': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': '-90.5…'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -71,6 +73,8 @@ class ClienteVendedorForm(forms.ModelForm):
         widgets = {
             'direccion': forms.Textarea(attrs={'rows': 3}),
             'referencia_ubicacion': forms.Textarea(attrs={'rows': 2}),
+            'latitud': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': '14.6…'}),
+            'longitud': forms.NumberInput(attrs={'step': '0.0000001', 'placeholder': '-90.5…'}),
         }
 
     def __init__(self, *args, **kwargs):

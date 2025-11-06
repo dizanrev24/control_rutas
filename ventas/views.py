@@ -12,6 +12,7 @@ from django.db.models import Sum, F, Q, Count
 from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth import get_user_model
 
 from asignaciones import models
 from .models import Venta, DetalleVenta
@@ -19,7 +20,12 @@ from .forms import VentaForm, DetalleVentaFormSet
 from planificacion.models import DetallePlanificacion
 from camiones.models import AsignacionCamionRuta, CargaCamion
 from core.utils import generar_pdf_venta
+from clientes.models import Cliente
 from django.db.models import Q
+from decimal import Decimal
+import logging
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def venta_crear(request, detalle_id):
@@ -101,9 +107,11 @@ def venta_crear(request, detalle_id):
         venta_form = VentaForm(request.POST)
         formset = DetalleVentaFormSet(
             request.POST,
-            form_kwargs={'carga_camion': carga_camion}
+            form_kwargs={'carga_camion': carga_camion},
+            prefix='detalles'
         )
         
+        logger.debug("POST venta_crear detalle_id=%s data_keys=%s", detalle_id, list(request.POST.keys()))
         if venta_form.is_valid() and formset.is_valid():
             try:
                 with transaction.atomic():
@@ -112,6 +120,8 @@ def venta_crear(request, detalle_id):
                     venta.detalle_planificacion = detalle_planificacion
                     venta.cliente = cliente
                     venta.carga_camion = carga_camion
+                    # Inicializar total para cumplir con NOT NULL en BD
+                    venta.total = Decimal('0.00')
                     venta.save()
                     
                     # Crear detalles y decrementar stock
@@ -127,24 +137,36 @@ def venta_crear(request, detalle_id):
                             )
                             detalle_carga.cantidad_actual -= detalle.cantidad
                             detalle_carga.save()
-                    
+
+                    # Actualizar total de la venta
+                    venta.total = venta.calcular_total()
+                    venta.save(update_fields=['total'])
+
+                    logger.info("Venta creada id=%s total=%s detalles=%s", venta.id, venta.total, venta.detalles.count())
                     messages.success(
                         request,
                         f'Venta #{venta.id} creada exitosamente. '
-                        f'Total: ${venta.calcular_total():.2f}'
+                        f'Total: Q{venta.calcular_total():.2f}'
                     )
                     return redirect('dentro_visita', detalle_id=detalle_id)
             
             except Exception as e:
+                logger.exception("Error creando venta para detalle_planificacion=%s", detalle_id)
                 messages.error(request, f'Error al crear la venta: {str(e)}')
         else:
+            logger.error("Errores en venta_form: %s", venta_form.errors.as_json())
+            logger.error("Errores en formset (non_form): %s", formset.non_form_errors())
+            for i, f in enumerate(formset.forms):
+                if f.errors:
+                    logger.error("Formset[%s] errors: %s", i, f.errors.as_json())
             messages.error(request, 'Por favor corrige los errores en el formulario.')
     
     else:
         venta_form = VentaForm()
         formset = DetalleVentaFormSet(
             queryset=DetalleVenta.objects.none(),
-            form_kwargs={'carga_camion': carga_camion}
+            form_kwargs={'carga_camion': carga_camion},
+            prefix='detalles'
         )
     
     context = {
@@ -153,6 +175,8 @@ def venta_crear(request, detalle_id):
         'detalle_planificacion': detalle_planificacion,
         'cliente': cliente,
         'carga_camion': carga_camion,
+        # Lista de productos cargados en el camión (para UI tipo POS)
+        'productos_cargados': carga_camion.detalles.select_related('producto').order_by('producto__nombre'),
     }
     
     return render(request, 'ventas/venta_form.html', context)
@@ -176,7 +200,7 @@ def venta_pdf(request, venta_id):
     """
     venta = get_object_or_404(
         Venta.objects.select_related(
-            'detalle_planificacion__planificacion__asignacion__vendedor__usuario',
+            'detalle_planificacion__planificacion__asignacion__vendedor',
             'cliente',
             'carga_camion__camion'
         ).prefetch_related('detalles__producto'),
@@ -184,7 +208,7 @@ def venta_pdf(request, venta_id):
     )
     
     # Validar permisos
-    vendedor_venta = venta.detalle_planificacion.planificacion.asignacion.vendedor.usuario
+    vendedor_venta = venta.detalle_planificacion.planificacion.asignacion.vendedor
     
     if request.user.es_vendedor and request.user != vendedor_venta:
         messages.error(request, 'No tienes permiso para ver esta venta.')
@@ -228,15 +252,15 @@ def venta_listar(request):
     # Obtener todas las ventas
     ventas = Venta.objects.select_related(
         'cliente',
-        'detalle_planificacion__planificacion__asignacion__vendedor__usuario',
+        'detalle_planificacion__planificacion__asignacion__vendedor',
         'carga_camion__camion'
     ).order_by('-fecha')
     
     # Filtros
     fecha_inicio = request.GET.get('fecha_inicio')
     fecha_fin = request.GET.get('fecha_fin')
-    vendedor_id = request.GET.get('vendedor')
-    cliente_id = request.GET.get('cliente')
+    vendedor_id = request.GET.get('vendedor') or request.GET.get('vendedor_id')
+    cliente_id = request.GET.get('cliente') or request.GET.get('cliente_id')
     
     # Aplicar filtros de fecha (default: últimos 30 días)
     if not fecha_inicio and not fecha_fin:
@@ -280,10 +304,15 @@ def venta_listar(request):
     
     context = {
         'page_obj': page_obj,
+        'ventas': page_obj,  # iterable en template
         'total_ventas': totales['cantidad_ventas'] or 0,
         'total_neto': total_neto,
+        'total_bruto': total_neto,  # No manejamos descuentos; mapeo útil para template
+        'total_descuento': 0,
         'fecha_inicio': fecha_inicio,
         'fecha_fin': fecha_fin,
+        'vendedores': get_user_model().objects.filter(rol='vendedor', is_active=True).order_by('first_name', 'last_name'),
+        'clientes': Cliente.objects.filter(activo=True).order_by('nombre'),
     }
     
     return render(request, 'ventas/venta_list.html', context)
@@ -308,7 +337,7 @@ def venta_detalle(request, pk):
     venta = get_object_or_404(
         Venta.objects.select_related(
             'cliente',
-            'detalle_planificacion__planificacion__asignacion__vendedor__usuario',
+            'detalle_planificacion__planificacion__asignacion__vendedor',
             'detalle_planificacion__planificacion__ruta_detalle__cliente',
             'carga_camion__camion'
         ).prefetch_related('detalles__producto__categoria'),

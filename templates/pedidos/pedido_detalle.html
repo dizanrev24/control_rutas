@@ -104,7 +104,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body text-center">
                     <h5 class="mb-2">Total del Pedido</h5>
-                    <h2>L. {{ pedido.total|floatformat:2 }}</h2>
+                    <h2>Q {{ pedido.total|floatformat:2 }}</h2>
                 </div>
             </div>
         </div>
@@ -138,9 +138,9 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">{{ detalle.cantidad }}</td>
-                            <td class="text-end">L. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-end">Q {{ detalle.precio_unitario|floatformat:2 }}</td>
                             <td class="text-end">
-                                <strong>L. {{ detalle.subtotal|floatformat:2 }}</strong>
+                                <strong>Q {{ detalle.subtotal|floatformat:2 }}</strong>
                             </td>
                         </tr>
                         {% empty %}
@@ -152,7 +152,7 @@
                     <tfoot>
                         <tr class="table-success">
                             <th colspan="4" class="text-end">Total:</th>
-                            <th class="text-end">L. {{ pedido.total|floatformat:2 }}</th>
+                            <th class="text-end">Q {{ pedido.total|floatformat:2 }}</th>
                         </tr>
                     </tfoot>
                 </table>

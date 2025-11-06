@@ -31,27 +31,96 @@
         </a>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Cliente</h5>
-        </div>
-        <div class="card-body">
-            <p class="mb-1"><strong>Nombre:</strong> {{ cliente.nombre }}</p>
-            <p class="mb-1"><strong>NIT:</strong> {{ cliente.nit }}</p>
-            <p class="mb-0"><strong>Dirección:</strong> {{ cliente.direccion }}</p>
-        </div>
-    </div>
-
-    <div class="alert alert-warning">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        Los <strong>pedidos</strong> son para entrega futura y <strong>NO descargan stock del camión</strong>.
-        Puedes seleccionar cualquier producto del catálogo.
-    </div>
-
     <form method="post" id="pedidoForm">
         {% csrf_token %}
+        {% if formset.non_form_errors %}
+        <div class="alert alert-danger">
+            <strong>Errores en los productos:</strong>
+            <ul class="mb-0">
+                {% for e in formset.non_form_errors %}
+                    <li>{{ e }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="row g-3">
+            <div class="col-12 col-lg-8">
+                <div class="card mb-3">
+                    <div class="card-header d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-0">Catálogo de productos</h5>
+                        </div>
+                        <div class="ms-3" style="min-width: 260px;">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="buscador" placeholder="Buscar producto...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <div id="lista-productos" class="row row-cols-1 row-cols-md-2 g-2">
+                            {% for prod in productos_catalogo %}
+                                <div class="col producto-item" data-nombre="{{ prod.nombre|lower }}" data-id="{{ prod.id }}" data-precio="{{ prod.precio_venta }}">
+                                    <div class="border rounded p-2 h-100 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <div class="fw-semibold">{{ prod.nombre }}</div>
+                                            <div class="small text-muted">Precio: Q{{ prod.precio_venta }}</div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 mt-2">
+                                            <input type="number" class="form-control form-control-sm input-cant" min="1" step="1" value="1" style="max-width: 100px;">
+                                            <button type="button" class="btn btn-sm btn-primary btn-add-prod"><i class="bi bi-plus-circle me-1"></i>Agregar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="col-12"><div class="alert alert-warning mb-0">No hay productos activos en el catálogo.</div></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Los pedidos no descuentan stock y quedan Pendientes para procesamiento.
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Carrito</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="cart-items" class="vstack gap-2"></div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="fw-semibold">Total</div>
+                            <div class="fs-4 text-info" id="total-pedido">Q0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Información adicional</h6>
+                    </div>
+                    <div class="card-body">
+                        {% crispy pedido_form %}
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="{% url 'dentro_visita' detalle_planificacion.id %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-info btn-lg">
+                        <i class="bi bi-check-circle me-1"></i>Confirmar Pedido
+                    </button>
+                </div>
+            </div>
+        </div>
         
-        <div class="card mb-3">
+        <div class="card mb-3 d-none">
             <div class="card-header">
                 <h5 class="mb-0">Productos</h5>
             </div>
@@ -61,34 +130,66 @@
                 <div id="formset-container">
                     {% for form in formset %}
                         <div class="formset-row" data-form-index="{{ forloop.counter0 }}">
-                            <div class="row">
-                                <div class="col-md-4">
+                            <div class="row align-items-end g-3">
+                                <div class="col-12 col-md-5">
                                     {{ form.producto|as_crispy_field }}
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-6 col-md-2">
                                     {{ form.cantidad|as_crispy_field }}
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-6 col-md-2">
                                     {{ form.precio_unitario|as_crispy_field }}
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-6 col-md-2">
                                     <label class="form-label">Subtotal</label>
                                     <div class="form-control-plaintext subtotal-display" id="subtotal-{{ forloop.counter0 }}">
-                                        $0.00
+                                        Q0.00
                                     </div>
                                 </div>
-                            </div>
-                            {{ form.DELETE }}
-                            {% if form.DELETE %}
-                                <div class="form-check mt-2">
-                                    <input class="form-check-input" type="checkbox" id="id_{{ formset.prefix }}-{{ forloop.counter0 }}-DELETE" name="{{ formset.prefix }}-{{ forloop.counter0 }}-DELETE">
-                                    <label class="form-check-label text-danger" for="id_{{ formset.prefix }}-{{ forloop.counter0 }}-DELETE">
-                                        Eliminar este producto
-                                    </label>
+                                <div class="col-6 col-md-1 text-end">
+                                    {{ form.DELETE }}
+                                    <button type="button" class="btn btn-outline-danger btn-sm btn-remove" data-index="{{ forloop.counter0 }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
-                            {% endif %}
+                            </div>
                         </div>
+                    {% empty %}
+                        <div class="text-muted">No hay productos agregados aún. Usa el botón "Agregar producto".</div>
                     {% endfor %}
+                </div>
+
+                <!-- Template oculto para nuevas filas -->
+                <template id="empty-form-template">
+                    <div class="formset-row" data-form-index="__prefix__">
+                        <div class="row align-items-end g-3">
+                            <div class="col-12 col-md-5">
+                                {{ formset.empty_form.producto|as_crispy_field }}
+                            </div>
+                            <div class="col-6 col-md-2">
+                                {{ formset.empty_form.cantidad|as_crispy_field }}
+                            </div>
+                            <div class="col-6 col-md-2">
+                                {{ formset.empty_form.precio_unitario|as_crispy_field }}
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label">Subtotal</label>
+                                <div class="form-control-plaintext subtotal-display" id="subtotal-__prefix__">Q0.00</div>
+                            </div>
+                            <div class="col-6 col-md-1 text-end">
+                                {{ formset.empty_form.DELETE }}
+                                <button type="button" class="btn btn-outline-danger btn-sm btn-remove" data-index="__prefix__">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="mt-3">
+                    <button type="button" id="btn-add" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar producto
+                    </button>
                 </div>
             </div>
         </div>
@@ -113,7 +214,7 @@
                     </div>
                     <div class="col-md-4 text-end">
                         <h4 class="mb-0">
-                            Total: <span id="total-pedido" class="text-info">$0.00</span>
+                            Total: <span id="total-pedido" class="text-info">Q0.00</span>
                         </h4>
                     </div>
                 </div>
@@ -135,6 +236,24 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        function marcarFilasVaciasParaEliminar() {
+            const total = parseInt(document.querySelector('[name="detalles-TOTAL_FORMS"]').value || '0', 10);
+            for (let i = 0; i < total; i++) {
+                const prod = document.querySelector(`[name="detalles-${i}-producto"]`);
+                const cant = document.querySelector(`[name="detalles-${i}-cantidad"]`);
+                const precio = document.querySelector(`[name="detalles-${i}-precio_unitario"]`);
+                const del = document.querySelector(`[name="detalles-${i}-DELETE"]`);
+                if (!prod || !cant || !precio) continue;
+                const prodVal = (prod.value || '').toString().trim();
+                const cantVal = parseInt(cant.value || '0', 10) || 0;
+                const precioVal = parseFloat(precio.value || '0') || 0;
+                if (!prodVal || cantVal <= 0 || precioVal <= 0) {
+                    if (del) del.checked = true;
+                    const row = document.querySelector(`.formset-row[data-form-index="${i}"]`);
+                    if (row) row.style.display = 'none';
+                }
+            }
+        }
         // Función para calcular subtotal de una línea
         function calcularSubtotal(index) {
             const cantidadInput = document.querySelector(`[name="detalles-${index}-cantidad"]`);
@@ -142,11 +261,11 @@
             const subtotalDisplay = document.getElementById(`subtotal-${index}`);
             
             if (cantidadInput && precioInput && subtotalDisplay) {
-                const cantidad = parseFloat(cantidadInput.value) || 0;
+                const cantidad = parseInt(cantidadInput.value || '0', 10) || 0;
                 const precio = parseFloat(precioInput.value) || 0;
                 const subtotal = cantidad * precio;
                 
-                subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+                subtotalDisplay.textContent = `Q${subtotal.toFixed(2)}`;
             }
         }
         
@@ -155,36 +274,132 @@
             let total = 0;
             
             document.querySelectorAll('.subtotal-display').forEach(function(element) {
-                const valor = parseFloat(element.textContent.replace('$', '')) || 0;
+                const valor = parseFloat(element.textContent.replace('Q', '')) || 0;
                 total += valor;
             });
             
-            document.getElementById('total-pedido').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('total-pedido').textContent = `Q${total.toFixed(2)}`;
         }
         
-        // Adjuntar eventos a todos los inputs
-        document.querySelectorAll('[name^="detalles-"][name$="-cantidad"], [name^="detalles-"][name$="-precio_unitario"]').forEach(function(input) {
-            const match = input.name.match(/detalles-(\d+)-(cantidad|precio_unitario)/);
-            if (match) {
-                const index = match[1];
-                
-                input.addEventListener('input', function() {
+        function attachRowEvents(index) {
+            const inputs = document.querySelectorAll(`[name="detalles-${index}-cantidad"], [name="detalles-${index}-precio_unitario"]`);
+            inputs.forEach(function(input){
+                input.addEventListener('input', function(){
                     calcularSubtotal(index);
                     calcularTotal();
                 });
+            });
+
+            const btnRemove = document.querySelector(`.btn-remove[data-index="${index}"]`);
+            if (btnRemove) {
+                btnRemove.addEventListener('click', function(){
+                    const row = document.querySelector(`.formset-row[data-form-index="${index}"]`);
+                    const delInput = document.querySelector(`[name="detalles-${index}-DELETE"]`);
+                    if (delInput) {
+                        delInput.checked = true;
+                    }
+                    if (row) row.style.display = 'none';
+                    calcularTotal();
+                });
             }
-        });
+        }
         
-        // Calcular totales iniciales
+        // Buscador
+        const buscador = document.getElementById('buscador');
+        if (buscador) {
+            buscador.addEventListener('input', function(){
+                const q = this.value.trim().toLowerCase();
+                document.querySelectorAll('#lista-productos .producto-item').forEach(function(card){
+                    const nombre = card.getAttribute('data-nombre');
+                    card.style.display = nombre.includes(q) ? '' : 'none';
+                });
+            });
+        }
+
+        // Añadir desde cards de productos (catálogo)
+        document.querySelectorAll('.btn-add-prod').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                const card = this.closest('.producto-item');
+                const prodId = card.getAttribute('data-id');
+                const precio = parseFloat(card.getAttribute('data-precio')) || 0;
+                const inputCant = card.querySelector('.input-cant');
+                let cant = parseInt(inputCant.value || '1', 10) || 1;
+                cant = Math.max(1, cant);
+
+                const totalInput = document.querySelector('[name="detalles-TOTAL_FORMS"]');
+                let index = parseInt(totalInput.value);
+                const template = document.getElementById('empty-form-template').content.cloneNode(true);
+                let html = template.firstElementChild.outerHTML.replace(/__prefix__/g, index);
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                const row = wrapper.firstElementChild;
+                document.getElementById('formset-container').appendChild(row);
+
+                const selectProd = row.querySelector(`[name="detalles-${index}-producto"]`);
+                const inputCantRow = row.querySelector(`[name="detalles-${index}-cantidad"]`);
+                const inputPrecio = row.querySelector(`[name="detalles-${index}-precio_unitario"]`);
+                if (selectProd) selectProd.value = prodId;
+                if (inputCantRow) inputCantRow.value = cant;
+                if (inputPrecio) inputPrecio.value = precio.toFixed(2);
+
+                totalInput.value = index + 1;
+                attachRowEvents(index);
+                calcularSubtotal(index);
+                calcularTotal();
+
+                const nombre = card.querySelector('.fw-semibold').textContent.trim();
+                const cartItem = document.createElement('div');
+                cartItem.className = 'd-flex justify-content-between align-items-center border rounded p-2';
+                cartItem.setAttribute('data-index', index);
+                cartItem.innerHTML = `
+                    <div class="me-2 small">
+                        <div class="fw-semibold">${nombre}</div>
+                        <div class="text-muted">${cant} x Q${precio.toFixed(2)}</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-cart"><i class="bi bi-x"></i></button>
+                `;
+                document.getElementById('cart-items').appendChild(cartItem);
+
+                cartItem.querySelector('.btn-remove-cart').addEventListener('click', function(){
+                    const i = cartItem.getAttribute('data-index');
+                    const delInput = document.querySelector(`[name="detalles-${i}-DELETE"]`);
+                    const fsRow = document.querySelector(`.formset-row[data-form-index="${i}"]`);
+                    if (delInput) delInput.checked = true;
+                    if (fsRow) fsRow.style.display = 'none';
+                    cartItem.remove();
+                    calcularTotal();
+                });
+            });
+        });
+
+        // Adjuntar eventos a filas existentes y calcular totales
         const totalFormsets = parseInt(document.querySelector('[name="detalles-TOTAL_FORMS"]').value);
         for (let i = 0; i < totalFormsets; i++) {
+            attachRowEvents(i);
             calcularSubtotal(i);
         }
         calcularTotal();
+
+        // Agregar nueva fila
+        document.getElementById('btn-add').addEventListener('click', function(){
+            const totalInput = document.querySelector('[name="detalles-TOTAL_FORMS"]');
+            let index = parseInt(totalInput.value);
+            const template = document.getElementById('empty-form-template').content.cloneNode(true);
+            const html = template.firstElementChild.outerHTML.replace(/__prefix__/g, index);
+
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            document.getElementById('formset-container').appendChild(wrapper.firstElementChild);
+
+            totalInput.value = index + 1;
+            attachRowEvents(index);
+        });
         
         // Validar antes de enviar
         document.getElementById('pedidoForm').addEventListener('submit', function(e) {
-            const total = parseFloat(document.getElementById('total-pedido').textContent.replace('$', '')) || 0;
+            // Marcar filas vacías o inválidas como DELETE
+            marcarFilasVaciasParaEliminar();
+            const total = parseFloat(document.getElementById('total-pedido').textContent.replace('Q', '')) || 0;
             
             if (total <= 0) {
                 e.preventDefault();
@@ -201,7 +416,7 @@
             e.preventDefault();
             Swal.fire({
                 title: '¿Confirmar Pedido?',
-                html: `<p>Total: <strong>$${total.toFixed(2)}</strong></p><p>El pedido quedará pendiente de entrega.</p>`,
+                html: `<p>Total: <strong>Q${total.toFixed(2)}</strong></p><p>El pedido quedará pendiente de entrega.</p>`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#17a2b8',

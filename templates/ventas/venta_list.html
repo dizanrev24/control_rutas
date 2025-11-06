@@ -22,22 +22,22 @@
                     <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
                 </div>
                 <div class="col-md-3">
-                    <label for="vendedor_id" class="form-label">Vendedor</label>
-                    <select class="form-select" id="vendedor_id" name="vendedor_id">
+                    <label for="vendedor" class="form-label">Vendedor</label>
+                    <select class="form-select" id="vendedor" name="vendedor">
                         <option value="">Todos</option>
                         {% for vendedor in vendedores %}
-                        <option value="{{ vendedor.id }}" {% if request.GET.vendedor_id == vendedor.id|stringformat:"s" %}selected{% endif %}>
-                            {{ vendedor.get_full_name }}
+                        <option value="{{ vendedor.id }}" {% if request.GET.vendedor == vendedor.id|stringformat:"s" or request.GET.vendedor_id == vendedor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ vendedor.get_full_name|default:vendedor.username }}
                         </option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="cliente_id" class="form-label">Cliente</label>
-                    <select class="form-select" id="cliente_id" name="cliente_id">
+                    <label for="cliente" class="form-label">Cliente</label>
+                    <select class="form-select" id="cliente" name="cliente">
                         <option value="">Todos</option>
                         {% for cliente in clientes %}
-                        <option value="{{ cliente.id }}" {% if request.GET.cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
+                        <option value="{{ cliente.id }}" {% if request.GET.cliente == cliente.id|stringformat:"s" or request.GET.cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
                             {{ cliente.nombre }}
                         </option>
                         {% endfor %}
@@ -60,24 +60,16 @@
         <div class="col-md-4">
             <div class="card bg-light">
                 <div class="card-body">
-                    <h5 class="card-title">Total Bruto</h5>
-                    <h3 class="text-primary">Q. {{ total_bruto|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h5 class="card-title">Total Descuentos</h5>
-                    <h3 class="text-warning">Q. {{ total_descuento|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body">
                     <h5 class="card-title">Total Neto</h5>
-                    <h3 class="text-success">Q. {{ total_neto|floatformat:2 }}</h3>
+                    <h3 class="text-primary">Q {{ total_neto|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Cantidad de Ventas</h5>
+                    <h3 class="text-success">{{ total_ventas }}</h3>
                 </div>
             </div>
         </div>
@@ -94,9 +86,7 @@
                             <th>Cliente</th>
                             <th>Vendedor</th>
                             <th>Camión</th>
-                            <th class="text-end">Total Bruto</th>
-                            <th class="text-end">Descuento</th>
-                            <th class="text-end">Total Neto</th>
+                            <th class="text-end">Total</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -105,11 +95,9 @@
                         <tr>
                             <td>{{ venta.fecha|date:"d/m/Y H:i" }}</td>
                             <td>{{ venta.cliente.nombre }}</td>
-                            <td>{{ venta.vendedor.get_full_name }}</td>
-                            <td>{{ venta.camion.codigo|default:"-" }}</td>
-                            <td class="text-end">L. {{ venta.total_bruto|floatformat:2 }}</td>
-                            <td class="text-end">L. {{ venta.descuento|floatformat:2 }}</td>
-                            <td class="text-end"><strong>L. {{ venta.total_neto|floatformat:2 }}</strong></td>
+                            <td>{{ venta.detalle_planificacion.planificacion.asignacion.vendedor.get_full_name|default:venta.detalle_planificacion.planificacion.asignacion.vendedor.username }}</td>
+                            <td>{{ venta.carga_camion.camion.codigo|default:venta.carga_camion.camion.placa|default:"-" }}</td>
+                            <td class="text-end"><strong>Q {{ venta.total|floatformat:2 }}</strong></td>
                             <td>
                                 <a href="{% url 'venta_detalle' venta.pk %}" class="btn btn-sm btn-info" title="Ver detalle">
                                     <i class="bi bi-eye"></i>

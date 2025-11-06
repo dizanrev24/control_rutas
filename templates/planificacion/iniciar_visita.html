@@ -117,10 +117,11 @@ document.addEventListener('DOMContentLoaded', function() {
         ubicacionTexto.textContent = 'Capturando ubicación GPS...';
         ubicacionStatus.className = 'alert alert-warning';
         
-        navigator.geolocation.getCurrentPosition(
+    navigator.geolocation.getCurrentPosition(
             function(position) {
-                inputLatitud.value = position.coords.latitude;
-                inputLongitud.value = position.coords.longitude;
+        // Redondear a 7 decimales para ajustarse al modelo (DecimalField decimal_places=7)
+        inputLatitud.value = position.coords.latitude.toFixed(7);
+        inputLongitud.value = position.coords.longitude.toFixed(7);
                 ubicacionCapturada = true;
                 
                 ubicacionTexto.innerHTML = `<i class="bi bi-check-circle me-2"></i>Ubicación capturada exitosamente`;

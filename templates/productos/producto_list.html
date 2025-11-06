@@ -68,8 +68,8 @@
                                 <td>
                                     <span class="badge bg-secondary">{{ producto.categoria.nombre }}</span>
                                 </td>
-                                <td>${{ producto.precio_compra|floatformat:2 }}</td>
-                                <td><strong>${{ producto.precio_venta|floatformat:2 }}</strong></td>
+                                <td>Q{{ producto.precio_compra|floatformat:2 }}</td>
+                                <td><strong>Q{{ producto.precio_venta|floatformat:2 }}</strong></td>
                                 <td>
                                     <span class="badge {% if producto.margen_ganancia > 30 %}bg-success{% elif producto.margen_ganancia > 15 %}bg-warning{% else %}bg-danger{% endif %}">
                                         {{ producto.margen_ganancia|floatformat:1 }}%

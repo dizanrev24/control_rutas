@@ -21,6 +21,21 @@
 
     <div class="card">
         <div class="card-body">
+            {% if form.errors or form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                <strong>Revisa los campos:</strong>
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
             {% crispy form %}
         </div>
     </div>
@@ -30,8 +45,12 @@
 // Capturar ubicación actual del navegador
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(position) {
-        document.querySelector('input[name="latitud"]').value = position.coords.latitude;
-        document.querySelector('input[name="longitud"]').value = position.coords.longitude;
+        const lat = position.coords.latitude.toFixed(7);
+        const lng = position.coords.longitude.toFixed(7);
+        const latInput = document.querySelector('input[name="latitud"]');
+        const lngInput = document.querySelector('input[name="longitud"]');
+        if (latInput) latInput.value = lat;
+        if (lngInput) lngInput.value = lng;
     }, function(error) {
         console.log('Error al obtener ubicación:', error);
     });

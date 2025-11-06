@@ -6,10 +6,12 @@ from math import radians, sin, cos, sqrt, atan2
 from io import BytesIO
 from django.http import HttpResponse
 from django.template.loader import get_template
+import logging
+from decimal import Decimal
 
-# WeasyPrint requiere GTK instalado en Windows
-# Descomentar cuando GTK esté instalado
-# from weasyprint import HTML
+logger = logging.getLogger(__name__)
+
+# Preferencia de renderizador: se intenta WeasyPrint y se cae a xhtml2pdf si no está disponible
 
 
 def calcular_hash_md5(archivo):
@@ -87,6 +89,43 @@ def validar_ubicacion(lat_cliente, lon_cliente, lat_visita, lon_visita, margen=1
     return es_valida, distancia
 
 
+def _render_html_to_pdf(html_string: str) -> bytes:
+    """
+    Renderiza HTML a PDF intentando primero WeasyPrint y, si no está disponible,
+    usando xhtml2pdf (ReportLab) como fallback.
+
+    Returns: bytes del PDF
+    Raises: Exception si ninguno está disponible
+    """
+    # 1) Intentar WeasyPrint
+    try:
+        from weasyprint import HTML  # type: ignore
+        logger.info("Render PDF con WeasyPrint")
+        html = HTML(string=html_string)
+        return html.write_pdf()
+    except Exception as e:
+        logger.warning("WeasyPrint no disponible o falló: %s", e)
+
+    # 2) Fallback: xhtml2pdf (pisa)
+    try:
+        from xhtml2pdf import pisa  # type: ignore
+        logger.info("Render PDF con xhtml2pdf (fallback)")
+        result = BytesIO()
+        # xhtml2pdf espera una fuente tipo archivo o string; maneja CSS limitado
+        pisa.CreatePDF(src=html_string, dest=result, encoding='utf-8')
+        pdf_bytes = result.getvalue()
+        result.close()
+        if not pdf_bytes:
+            raise Exception("xhtml2pdf no generó contenido")
+        return pdf_bytes
+    except Exception as e:
+        logger.error("xhtml2pdf no disponible o falló: %s", e)
+        raise Exception(
+            "No fue posible generar el PDF. Instala WeasyPrint (con GTK) o xhtml2pdf. "
+            "En Windows: instala el runtime GTK 3 y reinicia; como alternativa, 'pip install xhtml2pdf'."
+        )
+
+
 def generar_pdf_venta(venta):
     """
     Genera un PDF de una venta
@@ -101,27 +140,72 @@ def generar_pdf_venta(venta):
     """
     from django.utils import timezone
     
+    # Intentar con ReportLab (no requiere GTK ni binarios externos)
     try:
-        from weasyprint import HTML
-    except (ImportError, OSError) as e:
-        # WeasyPrint no disponible
-        raise Exception(
-            'WeasyPrint requiere GTK. '
-            'Descarga: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer'
-        )
-    
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.units import mm
+
+        logger.info("Render PDF de venta con ReportLab")
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=18*mm, rightMargin=18*mm, topMargin=18*mm, bottomMargin=18*mm)
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        titulo = f"Venta #{venta.id}"
+        elements.append(Paragraph(titulo, styles['Title']))
+        elements.append(Spacer(1, 6))
+
+        info_cliente = f"Cliente: {venta.cliente.nombre}"
+        elements.append(Paragraph(info_cliente, styles['Normal']))
+        fecha_txt = f"Fecha: {timezone.localtime(venta.fecha).strftime('%d/%m/%Y %H:%M')}"
+        elements.append(Paragraph(fecha_txt, styles['Normal']))
+        elements.append(Spacer(1, 12))
+
+        # Tabla de detalles
+        data = [["Producto", "Cant.", "Precio (Q)", "Subtotal (Q)"]]
+        for det in venta.detalles.all():
+            nombre = det.producto.nombre
+            cant = f"{int(det.cantidad)}"
+            precio = f"{det.precio_unitario:.2f}"
+            subtotal = f"{det.subtotal:.2f}"
+            data.append([nombre, cant, precio, subtotal])
+
+        # Fila total
+        total = venta.calcular_total()
+        data.append(["", "", "Total", f"{total:.2f}"])
+
+        table = Table(data, colWidths=[90*mm, 20*mm, 30*mm, 30*mm])
+        table.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+            ('ALIGN', (1,1), (-1,-2), 'RIGHT'),
+            ('ALIGN', (2,0), (2,-1), 'RIGHT'),
+            ('ALIGN', (3,0), (3,-1), 'RIGHT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTNAME', (-2,-1), (-1,-1), 'Helvetica-Bold'),
+        ]))
+        elements.append(table)
+
+        if venta.observaciones:
+            elements.append(Spacer(1, 12))
+            elements.append(Paragraph(f"Observaciones: {venta.observaciones}", styles['Italic']))
+
+        doc.build(elements)
+        pdf = buffer.getvalue()
+        buffer.close()
+        return pdf
+    except Exception as e:
+        logger.warning("ReportLab no disponible o falló: %s", e)
+
+    # Fallback a HTML → PDF
     template = get_template('ventas/venta_pdf.html')
-    
-    context = {
-        'venta': venta,
-        'now': timezone.now(),
-    }
-    
+    context = {'venta': venta, 'now': timezone.now()}
     html_string = template.render(context)
-    html = HTML(string=html_string)
-    
-    # Generar y retornar PDF como bytes
-    return html.write_pdf()
+    return _render_html_to_pdf(html_string)
 
 
 def generar_pdf_pedido(pedido):
@@ -138,27 +222,70 @@ def generar_pdf_pedido(pedido):
     """
     from django.utils import timezone
     
+    # Intentar con ReportLab primero
     try:
-        from weasyprint import HTML
-    except (ImportError, OSError) as e:
-        # WeasyPrint no disponible
-        raise Exception(
-            'WeasyPrint requiere GTK. '
-            'Descarga: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer'
-        )
-    
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.units import mm
+
+        logger.info("Render PDF de pedido con ReportLab")
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=18*mm, rightMargin=18*mm, topMargin=18*mm, bottomMargin=18*mm)
+
+        styles = getSampleStyleSheet()
+        elements = []
+
+        titulo = f"Pedido #{pedido.id}"
+        elements.append(Paragraph(titulo, styles['Title']))
+        elements.append(Spacer(1, 6))
+
+        info_cliente = f"Cliente: {pedido.cliente.nombre}"
+        elements.append(Paragraph(info_cliente, styles['Normal']))
+        fecha_txt = f"Fecha: {timezone.localtime(pedido.fecha).strftime('%d/%m/%Y %H:%M')}"
+        elements.append(Paragraph(fecha_txt, styles['Normal']))
+        elements.append(Spacer(1, 12))
+
+        data = [["Producto", "Cant.", "Precio (Q)", "Subtotal (Q)"]]
+        for det in pedido.detalles.all():
+            nombre = det.producto.nombre
+            cant = f"{int(det.cantidad)}"
+            precio = f"{det.precio_unitario:.2f}"
+            subtotal = f"{det.subtotal:.2f}"
+            data.append([nombre, cant, precio, subtotal])
+
+        total = pedido.calcular_total()
+        data.append(["", "", "Total", f"{total:.2f}"])
+
+        table = Table(data, colWidths=[90*mm, 20*mm, 30*mm, 30*mm])
+        table.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+            ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+            ('ALIGN', (1,1), (-1,-2), 'RIGHT'),
+            ('ALIGN', (2,0), (2,-1), 'RIGHT'),
+            ('ALIGN', (3,0), (3,-1), 'RIGHT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTNAME', (-2,-1), (-1,-1), 'Helvetica-Bold'),
+        ]))
+        elements.append(table)
+
+        if pedido.observaciones:
+            elements.append(Spacer(1, 12))
+            elements.append(Paragraph(f"Observaciones: {pedido.observaciones}", styles['Italic']))
+
+        doc.build(elements)
+        pdf = buffer.getvalue()
+        buffer.close()
+        return pdf
+    except Exception as e:
+        logger.warning("ReportLab no disponible o falló: %s", e)
+
+    # Fallback a HTML → PDF
     template = get_template('pedidos/pedido_pdf.html')
-    
-    context = {
-        'pedido': pedido,
-        'now': timezone.now(),
-    }
-    
+    context = {'pedido': pedido, 'now': timezone.now()}
     html_string = template.render(context)
-    html = HTML(string=html_string)
-    
-    # Generar y retornar PDF como bytes
-    return html.write_pdf()
+    return _render_html_to_pdf(html_string)
 
 
 def verificar_foto_duplicada(hash_foto):

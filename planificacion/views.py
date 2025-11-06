@@ -4,12 +4,15 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import date, datetime
 from django.db.models import Q
+import logging
 from .models import Planificacion, DetallePlanificacion
 from .forms import IniciarVisitaForm, FinalizarVisitaForm, ClienteNuevoVendedorForm, MarcarNoVisitadoForm
 from asignaciones.models import Asignacion
 from rutas.models import RutaDetalle
 from clientes.models import Cliente
 from core.utils import calcular_hash_md5, validar_ubicacion, verificar_foto_duplicada
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -90,12 +93,8 @@ def vendedor_crear_cliente_nuevo(request):
         messages.error(request, 'Esta sección es solo para vendedores.')
         return redirect('login')
     
-    # Verificar que el usuario tenga un perfil de vendedor
-    try:
-        vendedor = request.user.vendedor
-    except:
-        messages.error(request, 'No tienes un perfil de vendedor asignado. Contacta con el administrador.')
-        return redirect('planificacion_vendedor_dia')
+    # Vendedor es el propio usuario con rol vendedor
+    vendedor = request.user
     
     # Verificar que tenga asignación activa
     asignaciones_activas = []
@@ -141,6 +140,11 @@ def vendedor_crear_cliente_nuevo(request):
             return redirect('planificacion_vendedor_dia')
         else:
             messages.error(request, 'Error al crear el cliente. Verifique los datos.')
+            try:
+                logger.warning('vendedor_crear_cliente_nuevo POST keys: %s', list(request.POST.keys()))
+                logger.error('vendedor_crear_cliente_nuevo form errors: %s', form.errors.as_json())
+            except Exception:
+                pass
     else:
         form = ClienteNuevoVendedorForm()
     
@@ -212,7 +216,17 @@ def iniciar_visita(request, planificacion_id):
             messages.success(request, '¡Visita iniciada correctamente!')
             return redirect('dentro_visita', detalle_id=detalle.pk)
         else:
-            messages.error(request, 'Error al iniciar la visita. Verifique los datos.')
+            # Mostrar detalles de errores para facilitar diagnóstico
+            try:
+                errores_json = form.errors.get_json_data()
+                errores_legibles = []
+                for campo, lista in errores_json.items():
+                    mensajes = ', '.join([item.get('message', '') for item in lista])
+                    errores_legibles.append(f"{campo}: {mensajes}")
+                detalle_errores = ' | '.join(errores_legibles)
+                messages.error(request, f'Error al iniciar la visita. Verifique los datos. Detalle: {detalle_errores}')
+            except Exception:
+                messages.error(request, 'Error al iniciar la visita. Verifique los datos.')
     else:
         form = IniciarVisitaForm(instance=detalle)
     

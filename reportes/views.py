@@ -39,7 +39,7 @@ def reporte_fotos_duplicadas(request):
             hash_foto=hash_foto
         ).select_related(
             'planificacion__ruta_detalle__cliente',
-            'planificacion__asignacion__vendedor__usuario'
+            'planificacion__asignacion__vendedor'
         ).order_by('-planificacion__fecha')
         
         resultados.append({
@@ -73,14 +73,14 @@ def reporte_ubicaciones_invalidas(request):
         ubicacion_valida=False
     ).select_related(
         'planificacion__ruta_detalle__cliente',
-        'planificacion__asignacion__vendedor__usuario',
+        'planificacion__asignacion__vendedor',
         'planificacion__asignacion__ruta'
     ).order_by('-planificacion__fecha')
     
     # Agrupar por vendedor
     por_vendedor = {}
     for detalle in invalidas:
-        vendedor = detalle.planificacion.asignacion.vendedor.usuario.get_full_name()
+        vendedor = detalle.planificacion.asignacion.vendedor.get_full_name() or detalle.planificacion.asignacion.vendedor.username
         if vendedor not in por_vendedor:
             por_vendedor[vendedor] = []
         por_vendedor[vendedor].append(detalle)
@@ -129,7 +129,7 @@ def reporte_ventas_por_vendedor(request):
     ventas = Venta.objects.filter(
         fecha__range=[fecha_inicio, fecha_fin]
     ).select_related(
-        'detalle_planificacion__planificacion__asignacion__vendedor__usuario'
+        'detalle_planificacion__planificacion__asignacion__vendedor'
     )
     
     # Agrupar por vendedor
@@ -137,7 +137,7 @@ def reporte_ventas_por_vendedor(request):
     
     for venta in ventas:
         vendedor = venta.detalle_planificacion.planificacion.asignacion.vendedor
-        nombre_vendedor = vendedor.usuario.get_full_name()
+        nombre_vendedor = vendedor.get_full_name() or vendedor.username
         
         if nombre_vendedor not in vendedores_stats:
             vendedores_stats[nombre_vendedor] = {

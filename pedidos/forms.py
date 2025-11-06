@@ -39,11 +39,12 @@ class DetallePedidoForm(forms.ModelForm):
     Formulario para cada línea de detalle del pedido.
     Permite seleccionar cualquier producto activo del catálogo.
     """
+    # Forzar cantidades enteras
+    cantidad = forms.IntegerField(min_value=1, label='Cantidad', widget=forms.NumberInput(attrs={'min': 1, 'step': 1}))
     class Meta:
         model = DetallePedido
         fields = ['producto', 'cantidad', 'precio_unitario']
         widgets = {
-            'cantidad': forms.NumberInput(attrs={'min': 1, 'step': 1}),
             'precio_unitario': forms.NumberInput(attrs={'min': 0.01, 'step': 0.01}),
         }
         labels = {
@@ -56,7 +57,16 @@ class DetallePedidoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # Mostrar todos los productos activos (sin restricción de stock)
-        self.fields['producto'].queryset = Producto.objects.filter(activo=True)
+        self.fields['producto'].queryset = Producto.objects.filter(estado='activo')
+
+    def clean_cantidad(self):
+        cantidad = self.cleaned_data.get('cantidad')
+        try:
+            if int(cantidad) != cantidad or cantidad < 1:
+                raise forms.ValidationError('La cantidad debe ser un número entero positivo.')
+        except Exception:
+            raise forms.ValidationError('La cantidad debe ser un número entero positivo.')
+        return cantidad
 
 
 # Formset para manejar múltiples líneas de detalle
@@ -64,7 +74,7 @@ DetallePedidoFormSet = inlineformset_factory(
     Pedido,
     DetallePedido,
     form=DetallePedidoForm,
-    extra=3,
+    extra=0,
     can_delete=True,
     min_num=1,
     validate_min=True,

@@ -75,6 +75,14 @@
                                                    title="Agregar productos">
                                                     <i class="bi bi-plus-circle"></i>
                                                 </a>
+                                            {% else %}
+                                                {% if not carga.cuadre %}
+                                                    <a href="{% url 'cuadre_diario_crear' carga.pk %}" 
+                                                       class="btn btn-sm btn-warning" 
+                                                       title="Crear cuadre de esta carga">
+                                                        <i class="bi bi-calculator"></i>
+                                                    </a>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     </td>

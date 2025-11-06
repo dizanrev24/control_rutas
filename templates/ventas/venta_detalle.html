@@ -56,20 +56,20 @@
                     <table class="table table-sm">
                         <tr>
                             <th width="40%">Vendedor:</th>
-                            <td>{{ venta.vendedor.get_full_name }}</td>
+                            <td>{{ venta.detalle_planificacion.planificacion.asignacion.vendedor.get_full_name|default:venta.detalle_planificacion.planificacion.asignacion.vendedor.username }}</td>
                         </tr>
                         <tr>
                             <th>Camión:</th>
-                            <td>{{ venta.camion.codigo|default:"-" }}</td>
+                            <td>{{ venta.carga_camion.camion.codigo|default:venta.carga_camion.camion.placa|default:"-" }}</td>
                         </tr>
-                        {% if venta.camion %}
+                        {% if venta.carga_camion and venta.carga_camion.camion %}
                         <tr>
                             <th>Placa:</th>
-                            <td>{{ venta.camion.placa }}</td>
+                            <td>{{ venta.carga_camion.camion.placa }}</td>
                         </tr>
                         <tr>
                             <th>Marca/Modelo:</th>
-                            <td>{{ venta.camion.marca }} {{ venta.camion.modelo }}</td>
+                            <td>{{ venta.carga_camion.camion.marca }} {{ venta.carga_camion.camion.modelo }}</td>
                         </tr>
                         {% endif %}
                     </table>
@@ -78,29 +78,13 @@
         </div>
     </div>
 
-    <!-- Totales -->
+    <!-- Total de la Venta -->
     <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body text-center">
-                    <h6 class="text-muted mb-2">Total Bruto</h6>
-                    <h3 class="text-primary">L. {{ venta.total_bruto|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-light">
-                <div class="card-body text-center">
-                    <h6 class="text-muted mb-2">Descuento</h6>
-                    <h3 class="text-warning">L. {{ venta.descuento|floatformat:2 }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
+        <div class="col-md-12">
             <div class="card bg-success text-white">
                 <div class="card-body text-center">
-                    <h6 class="mb-2">Total Neto</h6>
-                    <h3>L. {{ venta.total_neto|floatformat:2 }}</h3>
+                    <h5 class="mb-2">Total de la Venta</h5>
+                    <h3>Q {{ venta.total|floatformat:2 }}</h3>
                 </div>
             </div>
         </div>
@@ -134,9 +118,9 @@
                                 {% endif %}
                             </td>
                             <td class="text-center">{{ detalle.cantidad }}</td>
-                            <td class="text-end">Q. {{ detalle.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-end">Q {{ detalle.precio_unitario|floatformat:2 }}</td>
                             <td class="text-end">
-                                <strong>L. {{ detalle.subtotal|floatformat:2 }}</strong>
+                                <strong>Q {{ detalle.subtotal|floatformat:2 }}</strong>
                             </td>
                         </tr>
                         {% empty %}
@@ -146,17 +130,9 @@
                         {% endfor %}
                     </tbody>
                     <tfoot>
-                        <tr class="table-active">
-                            <th colspan="4" class="text-end">Total Bruto:</th>
-                            <th class="text-end">L. {{ venta.total_bruto|floatformat:2 }}</th>
-                        </tr>
-                        <tr class="table-active">
-                            <th colspan="4" class="text-end">Descuento:</th>
-                            <th class="text-end text-warning">- Q. {{ venta.descuento|floatformat:2 }}</th>
-                        </tr>
                         <tr class="table-success">
-                            <th colspan="4" class="text-end">Total Neto:</th>
-                            <th class="text-end">L. {{ venta.total_neto|floatformat:2 }}</th>
+                            <th colspan="4" class="text-end">Total:</th>
+                            <th class="text-end">Q {{ venta.total|floatformat:2 }}</th>
                         </tr>
                     </tfoot>
                 </table>
@@ -178,9 +154,9 @@
                     <p><strong>Longitud:</strong> {{ venta.detalle_planificacion.longitud|default:"-" }}</p>
                 </div>
                 <div class="col-md-6">
-                    {% if venta.detalle_planificacion.foto_visita %}
-                    <p><strong>Foto de Visita:</strong></p>
-                    <img src="{{ venta.detalle_planificacion.foto_visita.url }}" alt="Foto de visita" class="img-thumbnail" style="max-width: 300px;">
+                    {% if venta.detalle_planificacion.fotografia_referencia %}
+                    <p><strong>Fotografía de la Visita:</strong></p>
+                    <img src="{{ venta.detalle_planificacion.fotografia_referencia.url }}" alt="Foto de visita" class="img-thumbnail" style="max-width: 300px;">
                     {% endif %}
                 </div>
             </div>

@@ -19,8 +19,54 @@
 
     <div class="card">
         <div class="card-body">
+                        {% if form.errors or form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                                <strong>Revisa los campos:</strong>
+                                <ul class="mb-0">
+                                        {% for field in form %}
+                                                {% for error in field.errors %}
+                                                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                                {% endfor %}
+                                        {% endfor %}
+                                        {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                        {% endfor %}
+                                </ul>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-end mb-3">
+                                <button type="button" id="btn-geo" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-geo"></i> Usar mi ubicación actual
+                                </button>
+                        </div>
             {% crispy form %}
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('btn-geo');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert('Geolocalización no soportada por este navegador.');
+            return;
+        }
+        btn.disabled = true;
+        btn.innerText = 'Obteniendo ubicación…';
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            const lat = pos.coords.latitude.toFixed(7);
+            const lng = pos.coords.longitude.toFixed(7);
+            const latInput = document.querySelector('input[name="latitud"]');
+            const lngInput = document.querySelector('input[name="longitud"]');
+            if (latInput) latInput.value = lat;
+            if (lngInput) lngInput.value = lng;
+        }, function(err) {
+            alert('No se pudo obtener la ubicación: ' + err.message);
+        }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+        setTimeout(() => { btn.disabled = false; btn.innerHTML = '<i class="bi bi-geo"></i> Usar mi ubicación actual'; }, 1200);
+    });
+});
+</script>
 {% endblock %}

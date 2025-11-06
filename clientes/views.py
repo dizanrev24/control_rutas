@@ -3,8 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
+import logging
 from .models import Cliente
-from .forms import ClienteForm, ClienteFiltroForm
+from .forms import ClienteForm, ClienteFiltroForm, ClienteVendedorForm
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -70,6 +73,11 @@ def cliente_crear(request):
             return redirect('cliente_listar')
         else:
             messages.error(request, 'Error al crear el cliente. Verifique los datos.')
+            try:
+                logger.warning('cliente_crear POST keys: %s', list(request.POST.keys()))
+                logger.error('cliente_crear form errors: %s', form.errors.as_json())
+            except Exception:
+                pass
     else:
         form = ClienteForm()
     
@@ -156,12 +164,8 @@ def vendedor_crear_cliente(request):
     from planificacion.models import Planificacion
     from datetime import date
     
-    # Verificar que el usuario tenga un perfil de vendedor
-    try:
-        vendedor = request.user.vendedor
-    except:
-        messages.error(request, 'No tienes un perfil de vendedor asignado. Contacta con el administrador.')
-        return redirect('planificacion_vendedor_dia')
+    # En este proyecto el vendedor es el propio Usuario con rol 'vendedor'
+    vendedor = request.user
     
     # Verificar que tenga asignación activa
     asignaciones_activas = []
@@ -176,7 +180,7 @@ def vendedor_crear_cliente(request):
         return redirect('planificacion_vendedor_dia')
     
     if request.method == 'POST':
-        form = ClienteForm(request.POST, request.FILES)
+        form = ClienteVendedorForm(request.POST)
         if form.is_valid():
             # Crear cliente
             cliente = form.save()
@@ -207,8 +211,13 @@ def vendedor_crear_cliente(request):
             return redirect('planificacion_vendedor_dia')
         else:
             messages.error(request, 'Error al crear el cliente. Verifique los datos.')
+            try:
+                logger.warning('vendedor_crear_cliente POST keys: %s', list(request.POST.keys()))
+                logger.error('vendedor_crear_cliente form errors: %s', form.errors.as_json())
+            except Exception:
+                pass
     else:
-        form = ClienteForm()
+        form = ClienteVendedorForm()
     
     context = {
         'form': form,

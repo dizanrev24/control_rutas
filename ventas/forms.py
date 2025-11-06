@@ -38,11 +38,12 @@ class DetalleVentaForm(forms.ModelForm):
     Formulario para cada línea de detalle de la venta.
     Valida que haya stock disponible en el camión.
     """
+    # Forzar cantidades enteras en el formulario aunque el modelo use Decimal
+    cantidad = forms.IntegerField(min_value=1, label='Cantidad', widget=forms.NumberInput(attrs={'min': 1, 'step': 1}))
     class Meta:
         model = DetalleVenta
         fields = ['producto', 'cantidad', 'precio_unitario']
         widgets = {
-            'cantidad': forms.NumberInput(attrs={'min': 1, 'step': 1}),
             'precio_unitario': forms.NumberInput(attrs={'min': 0.01, 'step': 0.01}),
         }
         labels = {
@@ -62,7 +63,7 @@ class DetalleVentaForm(forms.ModelForm):
             ).values_list('producto_id', flat=True)
             self.fields['producto'].queryset = Producto.objects.filter(
                 id__in=productos_disponibles,
-                activo=True
+                estado='activo'
             )
         else:
             self.fields['producto'].queryset = Producto.objects.none()
@@ -73,13 +74,20 @@ class DetalleVentaForm(forms.ModelForm):
         cantidad = cleaned_data.get('cantidad')
         
         if producto and cantidad and self.carga_camion:
+            # Validar que la cantidad sea entera positiva
+            try:
+                if int(cantidad) != cantidad or cantidad < 1:
+                    raise forms.ValidationError('La cantidad debe ser un número entero positivo.')
+            except Exception:
+                raise forms.ValidationError('La cantidad debe ser un número entero positivo.')
+
             # Verificar stock disponible en el camión
             try:
                 detalle_carga = self.carga_camion.detalles.get(producto=producto)
                 if cantidad > detalle_carga.cantidad_actual:
                     raise forms.ValidationError(
                         f'Stock insuficiente para {producto.nombre}. '
-                        f'Disponible: {detalle_carga.cantidad_actual}'
+                        f'Disponible: {int(detalle_carga.cantidad_actual)}'
                     )
             except:
                 raise forms.ValidationError(
@@ -94,7 +102,7 @@ DetalleVentaFormSet = inlineformset_factory(
     Venta,
     DetalleVenta,
     form=DetalleVentaForm,
-    extra=3,
+    extra=0,
     can_delete=True,
     min_num=1,
     validate_min=True,

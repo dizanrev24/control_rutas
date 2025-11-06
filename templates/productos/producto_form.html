@@ -29,8 +29,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Categoría:</strong> {{ producto.categoria.nombre }}</p>
-                    <p><strong>Precio Compra:</strong> <span class="text-info">${{ producto.precio_compra|floatformat:2 }}</span></p>
-                    <p><strong>Precio Venta:</strong> <span class="text-success">${{ producto.precio_venta|floatformat:2 }}</span></p>
+                    <p><strong>Precio Compra:</strong> <span class="text-info">Q{{ producto.precio_compra|floatformat:2 }}</span></p>
+                    <p><strong>Precio Venta:</strong> <span class="text-success">Q{{ producto.precio_venta|floatformat:2 }}</span></p>
                 </div>
                 <div class="col-md-6">
                     <p><strong>Margen:</strong> 
