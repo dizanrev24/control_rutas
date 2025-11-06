@@ -436,18 +436,7 @@
             </li>
             {% endif %}
 
-            <!-- Configuración -->
-            <li class="menu-item">
-                <a class="menu-link" data-submenu="config">
-                    <i class="bi bi-gear"></i>
-                    <span>Configuración</span>
-                    <i class="bi bi-chevron-right arrow"></i>
-                </a>
-                <ul class="submenu" id="submenu-config">
-                    <li><a href="#" class="menu-link"><i class="bi bi-person-circle"></i><span>Mi Perfil</span></a></li>
-                    <li><a href="#" class="menu-link"><i class="bi bi-lock"></i><span>Cambiar Contraseña</span></a></li>
-                </ul>
-            </li>
+        
 
             <li class="menu-item">
                 <form id="logout-form" method="POST" action="{% url 'logout' %}" style="display:none;">
